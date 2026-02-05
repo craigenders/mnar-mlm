@@ -1,0 +1,164 @@
+
+---------------------------------------------------------------------------
+
+                                   Blimp
+                                   4.0.2
+
+             Blimp was developed with funding from Institute of
+           Education Sciences awards R305D150056 and R305D190002.
+
+            Craig K. Enders, P.I. Email: cenders@psych.ucla.edu
+           Brian T. Keller, Co-P.I. Email: btkeller@missouri.edu
+                 Han Du, Co-P.I. Email: hdu@psych.ucla.edu
+                 Roy Levy, Co-P.I. Email: roy.levy@asu.edu
+
+              Programming and Blimp Studio by Brian T. Keller
+
+                   There is no expressed license given.
+
+---------------------------------------------------------------------------
+
+
+ALGORITHMIC OPTIONS SPECIFIED:
+
+  Imputation method:                 Fully Bayesian model-based
+  MCMC algorithm:                    Full conditional Metropolis sampler with
+                                       Auto-Derived Conditional Distributions
+  Default Priors:
+    Multilevel covariance matrices:  Zero matrix, df = -(p + 1) (PRIOR2)
+    Outcome covariance matrices:     Zero matrix, df = -(p + 1) (PRIOR2)
+    Predictor model variances:       Unit sum of squares, df = 2 (XPRIOR1)
+  Chain Starting Values:             Random starting values
+
+
+  NOTE: The default prior for regression coefficients 
+        in categorical models is 'normal( 0.0, 5.0)'
+
+  NOTE: For complete list of priors include 'pinfo' in the options.
+
+
+BURN-IN POTENTIAL SCALE REDUCTION (PSR) OUTPUT:
+
+  NOTE: Split chain PSR is being used. This splits each chain's
+        iterations to create twice as many chains.
+
+  Comparing iterations across 2 chains     Highest PSR   Parameter #  
+                          251 to 500             1.097             1  
+                          501 to 1000            1.115             8  
+                          751 to 1500            1.077             3  
+                         1001 to 2000            1.023             3  
+                         1251 to 2500            1.011             3  
+                         1501 to 3000            1.012             3  
+                         1751 to 3500            1.016             3  
+                         2001 to 4000            1.008             3  
+                         2251 to 4500            1.027             3  
+                         2501 to 5000            1.023             3  
+                         2751 to 5500            1.030             3  
+                         3001 to 6000            1.030             3  
+                         3251 to 6500            1.038             3  
+                         3501 to 7000            1.048             1  
+                         3751 to 7500            1.032             5  
+                         4001 to 8000            1.009             9  
+                         4251 to 8500            1.012             3  
+                         4501 to 9000            1.030             9  
+                         4751 to 9500            1.022             3  
+                         5001 to 10000           1.020             3  
+
+
+DATA INFORMATION:
+
+  Time identifier:          time
+  Level-2 identifier:       id
+  Sample Size:              2185
+  Level-2 Clusters:         437
+  Missing Data Info:
+
+                      Pattern #:       1
+                          miss % --------
+                        m =  0.0       -  
+                                 --------
+                                 % 100.0
+
+
+MODEL INFORMATION:
+
+  NUMBER OF PARAMETERS
+    Outcome Models:         2
+    Predictor Models:       0
+
+  MODELS
+    [1]  m ~ Intercept
+
+
+WARNING MESSAGES:
+
+  No warning messages.
+
+
+MODEL FIT:
+
+
+  INFORMATION CRITERIA
+
+    Marginal Likelihood
+      DIC2                  7389.032
+      WAIC                  8119.032
+
+    Conditional Likelihood
+      DIC2                  6831.725
+      WAIC                  7562.060
+
+
+IMPUTED DATA SUMMARIES:
+
+  NOTE: Imputed data summaries are averaged across 10000 data sets.
+
+
+Variables                              Mean     StdDev        25%        50%        75%        Min        Max 
+                                ------------------------------------------------------------------------------
+
+  m                                   0.122      0.327      0.000      0.000      0.000      0.000      1.000 
+
+                                ------------------------------------------------------------------------------
+
+
+
+CORRELATIONS AMONG RESIDUALS:
+
+  No residual correlations.
+
+
+
+OUTCOME MODEL ESTIMATES:
+
+  Summaries based on 10000 iterations using 2 chains.
+  NOTE: Estimate column based on posterior median.
+
+
+Outcome Variable:  m          
+
+Parameters                         Estimate     StdDev       2.5%      97.5%      ChiSq     PValue      N_Eff 
+                                ------------------------------------------------------------------------------
+Variances:                      
+  L2 : Var(Intercept)                 0.628      0.121      0.430      0.900        ---        ---    297.051 
+  Residual Var.                       1.000      0.000      1.000      1.000        ---        ---        nan 
+
+Coefficients:                   
+  Intercept                          -1.484      0.070     -1.627     -1.355    449.432      0.000    332.341 
+
+Thresholds:                     
+  Tau 1                               0.000      0.000      0.000      0.000        ---        ---        nan 
+
+Standard Deviations:            
+  L2 : SD(Intercept)                  0.793      0.075      0.656      0.949        ---        ---    296.465 
+  Residual SD                         1.000      0.000      1.000      1.000        ---        ---        nan 
+
+Proportion Variance Explained   
+  by Coefficients                     0.000      0.000      0.000      0.000        ---        ---        nan 
+  by Level-2 Random Intercepts        0.386      0.044      0.301      0.474        ---        ---    296.602 
+  by Level-1 Residual Variation       0.614      0.044      0.526      0.699        ---        ---    296.602 
+
+                                ------------------------------------------------------------------------------
+
+
+

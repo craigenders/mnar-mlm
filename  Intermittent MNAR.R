@@ -6,6 +6,7 @@
 library(ggplot2)
 library(rblimp)
 set_blimp('/applications/blimp/blimp-nightly')
+remotes::update_packages('rblimp')
 
 #------------------------------------------------------------------------------#
 # READ DATA ----
@@ -36,6 +37,16 @@ icc_growth <- rblimp(
   burn = 10000,
   iter = 10000)
 output(icc_growth)
+
+syntax_growth <- rblimp_syntax(
+  data = growth,
+  clusterid = 'id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  model = 'm ~ intercept | intercept;',
+  seed = 90291,
+  burn = 10000,
+  iter = 10000)
 
 icc_intensive <- rblimp(
   data = intensive,

@@ -1,0 +1,13 @@
+#!nightly
+DATA: growth-intermittent.csv;
+# VARIABLES: id d time y;
+TRANSFORM: m = ismissing(y);
+ORDINAL: m;
+# DROPOUT: m = y (missing);
+MISSING: NA;
+CLUSTERID: id;
+TIMEID: time;
+MODEL:  m ~ intercept | intercept;
+SEED: 90291;
+BURN: 10000;
+ITER: 10000;
