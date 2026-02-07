@@ -22,10 +22,12 @@ growth <- read.csv(filepath1, stringsAsFactors = T)
 intensive <- read.csv(filepath2, stringsAsFactors = T)
 growth$occasion <- growth$time
 intensive$occasion <- intensive$time
+growth$group <- growth$d
+intensive$group <- intensive$d
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
-source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar plotting.R')
+source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
 # MAR (LONGITUDINAL GROWTH) ----
@@ -34,13 +36,13 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar plottin
 growth_mar <- rblimp(
   data = growth,
   clusterid = 'id', 
-  ordinal = 'd',
+  ordinal = 'group',
   latent = 'id = b0i b1i',
-  fixed = 'd time',
+  fixed = 'group time',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i time@b1i;',
@@ -53,7 +55,7 @@ growth_mar <- rblimp(
 output(growth_mar)
 
 #------------------------------------------------------------------------------#
-# ESTIMATE MISSINGNESS ICC (LONGITUDINAL GROWTH) ----
+# ICC FOR THE MISSINGNESS INDICATOR (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
 # fit unconditional model
@@ -83,19 +85,19 @@ growth_tdummy <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'occasion',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   nominal = 'occasion',
   latent = 'id = b0i b1i',
-  fixed = 'occasion d',
+  fixed = 'occasion group',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept occasion d occasion*d | intercept;',
+    m ~ intercept occasion group occasion*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -111,18 +113,18 @@ growth_tlin <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'occasion',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   latent = 'id = b0i b1i',
-  fixed = 'time d',
+  fixed = 'time group',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept time d time*d | intercept;',
+    m ~ intercept time group time*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -138,18 +140,18 @@ growth_tquad <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'occasion',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   latent = 'id = b0i b1i',
-  fixed = 'time d',
+  fixed = 'time group',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept time time^2 d time*d time^2*d | intercept;',
+    m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -158,42 +160,50 @@ growth_tquad <- rblimp(
 # print output
 output(growth_tquad)
 
-names(growth_tdummy)
+#------------------------------------------------------------------------------#
+# PLOT MISSINGNESS PROBABILITIES (LONGITUDINAL GROWTH) ----
+#------------------------------------------------------------------------------#
 
-gro_sat <- plot_means(m ~ time | d, 
+gro_obs <- plot_means(m ~ time | group, 
            model = growth_tdummy,
            ylab = "Missingness Probability",
-           title = "A. Observed Probabilities",
-           group_labels = c("0" = "Group 0", "1" = "Group 1")) + ylim(0,.30)
+           title = "A. Observed Probabilities (Growth Data)",
+           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
-gro_dum <- plot_means(m.1.probability ~ time | d, 
+gro_dum <- plot_means(m.1.probability ~ time | group, 
            model = growth_tdummy,
            ylab = "Missingness Probability",
            title = "Dummy Coded Time",
-           group_labels = c("0" = "Group 0", "1" = "Group 1")) + ylim(0,.30)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
-# plot marginal probabilities (average individual probabilities) by time and group
-bivariate_plot(m ~ time | d, model = growth_tdummy, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
-bivariate_plot(m.1.probability ~ time | d, model = growth_tdummy, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
-bivariate_plot(m.1.probability ~ time | d, model = growth_tlin, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
-bivariate_plot(m.1.probability ~ time | d, model = growth_tquad, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
+gro_lin <- plot_means(m.1.probability ~ time | group, 
+                      model = growth_tlin,
+                      ylab = "Missingness Probability",
+                      title = "Linear Time",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+
+gro_quad <- plot_means(m.1.probability ~ time | group, 
+                      model = growth_tquad,
+                      ylab = "Missingness Probability",
+                      title = "Quadratic Time",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 # compute marginal probabilities (average individual probabilities) by time and group
-miss_growth_sat <- aggregate(m ~ time + d, data = growth_tdummy@average_imp, mean)
-miss_growth_tdummy <- aggregate(m.1.probability ~ time + d, data = growth_tdummy@average_imp, mean)
-miss_growth_tlin <- aggregate(m.1.probability ~ time + d, data = growth_tlin@average_imp, mean)
-miss_growth_tquad <- aggregate(m.1.probability ~ time + d, data = growth_tquad@average_imp, mean)
+pmiss_growth_obs <- aggregate(m ~ time + group, data = growth_tdummy@average_imp, mean)
+pmiss_growth_tdummy <- aggregate(m.1.probability ~ time + group, data = growth_tdummy@average_imp, mean)
+pmiss_growth_tlin <- aggregate(m.1.probability ~ time + group, data = growth_tlin@average_imp, mean)
+pmiss_growth_tquad <- aggregate(m.1.probability ~ time + group, data = growth_tquad@average_imp, mean)
 
 # compute rmse of marginal vs. observed probabilities
-rmse_gro_tdummy <- sqrt(mean((miss_growth_tdummy$m.1.probability - miss_growth_sat$m)^2))
-rmse_gro_tlin <- sqrt(mean((miss_growth_tlin$m.1.probability - miss_growth_sat$m)^2))
-rmse_gro_tquad <- sqrt(mean((miss_growth_tquad$m.1.probability - miss_growth_sat$m)^2))
+rmse_gro_tdummy <- sqrt(mean((pmiss_growth_tdummy$m.1.probability - pmiss_growth_obs$m)^2))
+rmse_gro_tlin <- sqrt(mean((pmiss_growth_tlin$m.1.probability - pmiss_growth_obs$m)^2))
+rmse_gro_tquad <- sqrt(mean((pmiss_growth_tquad$m.1.probability - pmiss_growth_obs$m)^2))
 rmse_gro_tdummy; rmse_gro_tlin; rmse_gro_tquad
 
 # summarize difference between marginal vs. observed probabilities
-summary(miss_growth_tdummy$m.1.probability - miss_growth_sat$m)
-summary(miss_growth_tlin$m.1.probability - miss_growth_sat$m)
-summary(miss_growth_tquad$m.1.probability - miss_growth_sat$m)
+summary(pmiss_growth_tdummy$m.1.probability - pmiss_growth_obs$m)
+summary(pmiss_growth_tlin$m.1.probability - pmiss_growth_obs$m)
+summary(pmiss_growth_tquad$m.1.probability - pmiss_growth_obs$m)
 
 #------------------------------------------------------------------------------#
 # WU-CARROLL MODEL (LONGITUDINAL GROWTH) ----
@@ -206,19 +216,19 @@ growth_wc <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   nominal = 'occasion',
   latent = 'id = b0i b1i',
-  fixed = 'd time occasion',
+  fixed = 'group time occasion',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept occasion d occasion*d b0i b1i | intercept;',
+    m ~ intercept occasion group occasion*group b0i b1i | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -234,14 +244,14 @@ output(growth_wc)
 intensive_mar <- rblimp(
   data = intensive,
   clusterid = 'id', 
-  ordinal = 'd',
+  ordinal = 'group',
   latent = 'id = b0i b1i',
-  fixed = 'd',
+  fixed = 'group',
   center = 'groupmean = x',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i x@b1i;',
@@ -254,7 +264,7 @@ intensive_mar <- rblimp(
 output(intensive_mar)
 
 #------------------------------------------------------------------------------#
-# ESTIMATE MISSINGNESS ICC (INTENSIVE MEASUREMENTS) ----
+# ICC FOR THE MISSINGNESS INDICATOR (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
 # fit unconditional model
@@ -284,20 +294,20 @@ intensive_tdummy <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   nominal = 'occasion',
   latent = 'id = b0i b1i',
-  fixed = 'occasion d',
+  fixed = 'occasion group',
   center = 'groupmean = x',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept occasion d occasion*d | intercept;',
+    m ~ intercept occasion group occasion*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -313,19 +323,19 @@ intensive_tlin <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   latent = 'id = b0i b1i',
-  fixed = 'time d',
+  fixed = 'time group',
   center = 'groupmean = x',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept time d time*d | intercept;',
+    m ~ intercept time group time*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -341,19 +351,19 @@ intensive_tquad <- rblimp(
   transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   latent = 'id = b0i b1i',
-  fixed = 'time d',
+  fixed = 'time group',
   center = 'groupmean = x',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept time time^2 d time*d time^2*d | intercept;',
+    m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -362,28 +372,50 @@ intensive_tquad <- rblimp(
 # print output
 output(intensive_tquad)
 
-# plot marginal probabilities (average individual probabilities) by time and group
-bivariate_plot(m ~ time | d, model = intensive_tdummy, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
-bivariate_plot(m.1.probability ~ time | d, model = intensive_tdummy, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
-bivariate_plot(m.1.probability ~ time | d, model = intensive_tlin, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
-bivariate_plot(m.1.probability ~ time | d, model = intensive_tquad, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
+#------------------------------------------------------------------------------#
+# PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
+#------------------------------------------------------------------------------#
+
+int_obs <- plot_means(m ~ time | group, 
+                      model = intensive_tdummy,
+                      ylab = "Missingness Probability",
+                      title = "B. Observed Probabilities (Intensive Data)",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+
+int_dum <- plot_means(m.1.probability ~ time | group, 
+                      model = intensive_tdummy,
+                      ylab = "Missingness Probability",
+                      title = "Dummy Coded Time",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+
+int_lin <- plot_means(m.1.probability ~ time | group, 
+                      model = intensive_tlin,
+                      ylab = "Missingness Probability",
+                      title = "Linear Time",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+
+int_quad <- plot_means(m.1.probability ~ time | group, 
+                       model = intensive_tquad,
+                       ylab = "Missingness Probability",
+                       title = "Quadratic Time",
+                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 # compute marginal probabilities (average individual probabilities) by time and group
-miss_intensive_sat <- aggregate(m ~ time + d, data = intensive_tdummy@average_imp, mean)
-miss_intensive_tdummy <- aggregate(m.1.probability ~ time + d, data = intensive_tdummy@average_imp, mean)
-miss_intensive_tlin <- aggregate(m.1.probability ~ time + d, data = intensive_tlin@average_imp, mean)
-miss_intensive_tquad <- aggregate(m.1.probability ~ time + d, data = intensive_tquad@average_imp, mean)
+pmiss_intensive_obs <- aggregate(m ~ time + group, data = intensive_tdummy@average_imp, mean)
+pmiss_intensive_tdummy <- aggregate(m.1.probability ~ time + group, data = intensive_tdummy@average_imp, mean)
+pmiss_intensive_tlin <- aggregate(m.1.probability ~ time + group, data = intensive_tlin@average_imp, mean)
+pmiss_intensive_tquad <- aggregate(m.1.probability ~ time + group, data = intensive_tquad@average_imp, mean)
 
 # compute rmse of marginal vs. observed probabilities
-rmse_int_tdummy <- sqrt(mean((miss_intensive_tdummy$m.1.probability - miss_intensive_sat$m)^2))
-rmse_int_tlin <- sqrt(mean((miss_intensive_tlin$m.1.probability - miss_intensive_sat$m)^2))
-rmse_int_tquad <- sqrt(mean((miss_intensive_tquad$m.1.probability - miss_intensive_sat$m)^2))
+rmse_int_tdummy <- sqrt(mean((pmiss_intensive_tdummy$m.1.probability - pmiss_intensive_obs$m)^2))
+rmse_int_tlin <- sqrt(mean((pmiss_intensive_tlin$m.1.probability - pmiss_intensive_obs$m)^2))
+rmse_int_tquad <- sqrt(mean((pmiss_intensive_tquad$m.1.probability - pmiss_intensive_obs$m)^2))
 rmse_int_tdummy; rmse_int_tlin; rmse_int_tquad
 
 # summarize difference between marginal vs. observed probabilities
-summary(miss_intensive_tdummy$m.1.probability - miss_intensive_sat$m)
-summary(miss_intensive_tlin$m.1.probability - miss_intensive_sat$m)
-summary(miss_intensive_tquad$m.1.probability - miss_intensive_sat$m)
+summary(pmiss_intensive_tdummy$m.1.probability - pmiss_intensive_obs$m)
+summary(pmiss_intensive_tlin$m.1.probability - pmiss_intensive_obs$m)
+summary(pmiss_intensive_tquad$m.1.probability - pmiss_intensive_obs$m)
 
 #------------------------------------------------------------------------------#
 # WU-CARROLL (INTENSIVE MEASUREMENTS) ----
@@ -393,22 +425,22 @@ intensive_wc <- rblimp(
   data = intensive,
   clusterid = 'id', 
   transform = 'm = ismissing(y)',
-  ordinal = 'm d',
+  ordinal = 'm group',
   nominal = 'occasion',
   latent = 'id = b0i b1i',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  fixed = 'time d',
+  fixed = 'time group',
   center = 'groupmean = x',
   model = '
     level2:
-    b0i ~ 1 d;
-    b1i ~ 1 d;
+    b0i ~ 1 group;
+    b1i ~ 1 group;
     b0i ~~ b1i;
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept occasion d occasion*d b0i b1i | intercept;',
+    m ~ intercept occasion group occasion*group b0i b1i | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -416,3 +448,17 @@ intensive_wc <- rblimp(
 
 # print output
 output(intensive_wc)
+
+#------------------------------------------------------------------------------#
+# FIGURE 2 ----
+#------------------------------------------------------------------------------#
+
+figure2 <- gro_obs / int_obs
+
+ggsave(
+  filename = "~/desktop/Figure 2. Obs Missingness.pdf",
+  plot = figure2,
+  width = 8.5,
+  height = 11,
+  units = "in"
+)
