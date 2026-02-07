@@ -4,6 +4,7 @@
 
 # load packages
 library(ggplot2)
+library(patchwork)
 library(rblimp)
 # set_blimp('/applications/blimp/blimp-nightly')
 # remotes::update_packages('rblimp')
@@ -24,6 +25,7 @@ intensive$occasion <- intensive$time
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
+source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar plotting.R')
 
 #------------------------------------------------------------------------------#
 # MAR (LONGITUDINAL GROWTH) ----
@@ -51,7 +53,7 @@ growth_mar <- rblimp(
 output(growth_mar)
 
 #------------------------------------------------------------------------------#
-# ESTIMATE ICC (LONGITUDINAL GROWTH) ----
+# ESTIMATE MISSINGNESS ICC (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
 # fit unconditional model
@@ -156,6 +158,20 @@ growth_tquad <- rblimp(
 # print output
 output(growth_tquad)
 
+names(growth_tdummy)
+
+gro_sat <- plot_means(m ~ time | d, 
+           model = growth_tdummy,
+           ylab = "Missingness Probability",
+           title = "A. Observed Probabilities",
+           group_labels = c("0" = "Group 0", "1" = "Group 1")) + ylim(0,.30)
+
+gro_dum <- plot_means(m.1.probability ~ time | d, 
+           model = growth_tdummy,
+           ylab = "Missingness Probability",
+           title = "Dummy Coded Time",
+           group_labels = c("0" = "Group 0", "1" = "Group 1")) + ylim(0,.30)
+
 # plot marginal probabilities (average individual probabilities) by time and group
 bivariate_plot(m ~ time | d, model = growth_tdummy, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
 bivariate_plot(m.1.probability ~ time | d, model = growth_tdummy, discrete_x = 'time', points = F, ci = F) + ylim(0,.30)
@@ -238,7 +254,7 @@ intensive_mar <- rblimp(
 output(intensive_mar)
 
 #------------------------------------------------------------------------------#
-# ESTIMATE ICC (INTENSIVE MEASUREMENTS) ----
+# ESTIMATE MISSINGNESS ICC (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
 # fit unconditional model
