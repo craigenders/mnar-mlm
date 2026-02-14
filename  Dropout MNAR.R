@@ -8,7 +8,7 @@ options (scipen = 999)
 library(ggplot2)
 library(patchwork)
 library(rblimp)
-# set_blimp('/applications/blimp/blimp-nightly')
+set_blimp('/applications/blimp/blimp-nightly')
 # remotes::update_packages('rblimp')
 
 #------------------------------------------------------------------------------#
@@ -16,8 +16,8 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-intermittent.csv'
-filepath2 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-intermittent.csv'
+filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-dropout.csv'
+filepath2 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-dropout.csv'
 
 # create data frame from github data
 growth <- read.csv(filepath1, stringsAsFactors = T)
@@ -35,6 +35,8 @@ growth_mar <- rblimp(
   data = growth,
   clusterid = 'id', 
   ordinal = 'group',
+  timeid = 'time',
+  dropout = 
   latent = 'id = b0i b1i',
   fixed = 'group time',
   model = '
@@ -52,25 +54,7 @@ growth_mar <- rblimp(
 # print output
 output(growth_mar)
 
-#------------------------------------------------------------------------------#
-# ICC FOR THE MISSINGNESS INDICATOR (LONGITUDINAL GROWTH) ----
-#------------------------------------------------------------------------------#
-
-# fit unconditional model
-icc_growth <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  model = 'm ~ intercept | intercept;',
-  seed = 90291,
-  burn = 10000,
-  iter = 10000)
-
-# print output
-output(icc_growth)
+tmp <- growth_mar@average_imp
 
 #------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES (LONGITUDINAL GROWTH) ----
@@ -80,10 +64,10 @@ output(icc_growth)
 growth_tdummy <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
+  # transform = 'm = ismissing(y)',
+  timeid = 'time',
+  dropout = 'm = y (binary)',
+  ordinal = 'group',
   nominal = 'occasion',
   latent = 'id = b0i b1i',
   fixed = 'occasion time group',
@@ -95,7 +79,7 @@ growth_tdummy <- rblimp(
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept occasion group occasion*group | intercept;',
+    m ~ intercept@-3 occasion occasion*group | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -122,7 +106,7 @@ growth_tlin <- rblimp(
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept time group time*group | intercept;',
+    m ~ intercept@-3 time time*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -149,7 +133,7 @@ growth_tquad <- rblimp(
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept time time^2 group time*group time^2*group | intercept;',
+    m ~ intercept@-3 time time^2 time*group time^2*group | intercept;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -159,96 +143,6 @@ growth_tquad <- rblimp(
 output(growth_tquad)
 
 #------------------------------------------------------------------------------#
-# CURSIO ET AL. MODEL (LONGITUDINAL GROWTH) ----
-#------------------------------------------------------------------------------#
-
-cursio_1pl <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = b0i b1i u0i',
-  fixed = 'occasion group time',
-  model = '
-    level2:
-    b0i ~ 1 group;
-    b1i ~ 1 group;
-    b0i ~~ b1i;
-    level1:
-    y ~ 1@b0i time@b1i;
-    missingness:
-    u0i ~ intercept;
-    m ~ intercept@u0i occasion;',
-  seed = 90291,
-  burn = 10000,
-  iter = 10000,
-  nimps = 20)
-
-# print output
-output(cursio_1pl)
-
-# cursio 2pl model
-cursio_2pl <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = b0i b1i u0i',
-  fixed = 'time occasion group',
-  model = '
-    level2:
-    b0i ~ 1 group;
-    b1i ~ 1 group;
-    b0i ~~ b1i;
-    level1:
-    y ~ 1@b0i time@b1i;
-    missingness:
-    u0i ~ intercept;
-    m ~ intercept@u0i occasion occasion*u0i;',
-  seed = 90291,
-  burn = 50000,
-  iter = 50000,
-  nimps = 20)
-
-# print output
-output(cursio_2pl)
-
-# cursio 2pl model
-growth_cursio_2pl_cent <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = b0i b1i u0i',
-  fixed = 'time occasion group',
-  model = '
-    level2:
-    b0i ~ 1 group;
-    b1i ~ 1 group;
-    b0i ~~ b1i;
-    level1:
-    y ~ 1@b0i time@b1i;
-    missingness:
-    u0i ~ intercept@0;
-    m ~ intercept occasion u0i@1 occasion*u0i | intercept@0;',
-  seed = 90291,
-  burn = 50000,
-  iter = 50000,
-  nimps = 20)
-
-# print output
-output(growth_cursio_2pl_cent)
-
-#------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
@@ -256,13 +150,13 @@ gro_obs <- plot_means(m ~ time | group,
            model = growth_tdummy,
            ylab = "Missingness Probability",
            title = "A. Observed Probabilities (Growth Data)",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.40)
 
 gro_obs_f3 <- plot_means(m ~ time | group, 
                       model = growth_tdummy,
                       ylab = "Missingness Probability",
                       title = "Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.40)
 
 gro_dum <- plot_means(m.1.probability ~ time | group, 
            model = growth_tdummy,
@@ -358,26 +252,6 @@ intensive_mar <- rblimp(
 output(intensive_mar)
 
 #------------------------------------------------------------------------------#
-# ICC FOR THE MISSINGNESS INDICATOR (INTENSIVE MEASUREMENTS) ----
-#------------------------------------------------------------------------------#
-
-# fit unconditional model
-icc_intensive <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  model = 'm ~ intercept | intercept;',
-  seed = 90291,
-  burn = 10000,
-  iter = 10000)
-
-# print output
-output(icc_intensive)
-
-#------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
@@ -401,7 +275,7 @@ intensive_tdummy <- rblimp(
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept occasion group occasion*group | intercept;',
+    m ~ intercept occasion group occasion*group | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
