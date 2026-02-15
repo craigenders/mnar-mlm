@@ -23,6 +23,9 @@ filepath2 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intens
 growth <- read.csv(filepath1, stringsAsFactors = T)
 intensive <- read.csv(filepath2, stringsAsFactors = T)
 
+growth <- growth[!is.na(growth$m),]
+intensive <- intensive[!is.na(intensive$m),]
+
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
@@ -64,10 +67,9 @@ tmp <- growth_mar@average_imp
 growth_tdummy <- rblimp(
   data = growth,
   clusterid = 'id', 
-  # transform = 'm = ismissing(y)',
   timeid = 'time',
-  dropout = 'm = y (binary)',
-  ordinal = 'group',
+  # dropout = 'm = y (binary)',
+  ordinal = 'm group',
   nominal = 'occasion',
   latent = 'id = b0i b1i',
   fixed = 'occasion time group',
@@ -92,7 +94,7 @@ output(growth_tdummy)
 growth_tlin <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   # timeid = 'occasion',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
@@ -106,7 +108,21 @@ growth_tlin <- rblimp(
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept@-3 time time*group | intercept;',
+    m ~ intercept@-3 time@b1 time*group@b2 | intercept@0;',
+  parameters = '
+    # Group 0
+    p0g0 = phi(-3 + b1*0 + b2*0*0);  # time=0, group=0
+    p1g0 = phi(-3 + b1*1 + b2*1*0);  # time=1, group=0
+    p2g0 = phi(-3 + b1*2 + b2*2*0);  # time=2, group=0
+    p3g0 = phi(-3 + b1*3 + b2*3*0);  # time=3, group=0
+    p4g0 = phi(-3 + b1*4 + b2*4*0);  # time=4, group=0
+    # Group 1
+    p0g1 = phi(-3 + b1*0 + b2*0*1);  # time=0, group=1
+    p1g1 = phi(-3 + b1*1 + b2*1*1);  # time=1, group=1
+    p2g1 = phi(-3 + b1*2 + b2*2*1);  # time=2, group=1
+    p3g1 = phi(-3 + b1*3 + b2*3*1);  # time=3, group=1
+    p4g1 = phi(-3 + b1*4 + b2*4*1);  # time=4, group=1
+  ',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -119,7 +135,7 @@ output(growth_tlin)
 growth_tquad <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   # timeid = 'occasion',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
@@ -133,7 +149,7 @@ growth_tquad <- rblimp(
     level1:
     y ~ 1@b0i time@b1i;
     missingness:
-    m ~ intercept@-3 time time^2 time*group time^2*group | intercept;',
+    m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -148,31 +164,31 @@ output(growth_tquad)
 
 gro_obs <- plot_means(m ~ time | group, 
            model = growth_tdummy,
-           ylab = "Missingness Probability",
+           ylab = "Conditional Dropout Probability",
            title = "A. Observed Probabilities (Growth Data)",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.40)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 gro_obs_f3 <- plot_means(m ~ time | group, 
                       model = growth_tdummy,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.40)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 gro_dum <- plot_means(m.1.probability ~ time | group, 
            model = growth_tdummy,
-           ylab = "Missingness Probability",
+           ylab = "Conditional Dropout Probability",
            title = "Dummy Coded Time",
            group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 gro_lin <- plot_means(m.1.probability ~ time | group, 
                       model = growth_tlin,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "Linear Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 gro_quad <- plot_means(m.1.probability ~ time | group, 
                       model = growth_tquad,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "Quadratic Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
@@ -259,7 +275,7 @@ output(intensive_mar)
 intensive_tdummy <- rblimp(
   data = intensive,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
@@ -275,7 +291,8 @@ intensive_tdummy <- rblimp(
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept occasion group occasion*group | intercept@0;',
+    d = ifelse((time < 5) or (time == 20), 0, 1);
+    m ~ intercept@-3 d*occasion occasion*group | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -288,7 +305,7 @@ output(intensive_tdummy)
 intensive_tlin <- rblimp(
   data = intensive,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
@@ -303,7 +320,8 @@ intensive_tlin <- rblimp(
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept time group time*group | intercept;',
+    d = ifelse(time < 5, 0, 1); 
+    m ~ intercept@-3 d d*group d*(time - 5) d*(time - 5)*group | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -316,7 +334,7 @@ output(intensive_tlin)
 intensive_tquad <- rblimp(
   data = intensive,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
@@ -331,7 +349,8 @@ intensive_tquad <- rblimp(
     level1:
     y ~ 1@b0i x@b1i;
     missingness:
-    m ~ intercept time time^2 group time*group time^2*group | intercept;',
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d d*group d*(time - 5) d*(time - 5)^2 d*(time - 5)*group d*(time - 5)^2*group | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -341,98 +360,36 @@ intensive_tquad <- rblimp(
 output(intensive_tquad)
 
 #------------------------------------------------------------------------------#
-# CURSIO ET AL. MODEL (LONGITUDINAL GROWTH) ----
-#------------------------------------------------------------------------------#
-
-intensive_cursio_1pl <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = b0i b1i u0i',
-  fixed = 'occasion group time',
-  model = '
-    level2:
-    b0i ~ 1 group;
-    b1i ~ 1 group;
-    b0i ~~ b1i;
-    level1:
-    y ~ 1@b0i time@b1i;
-    missingness:
-    u0i ~ intercept;
-    m ~ intercept@u0i occasion;',
-  seed = 90291,
-  burn = 10000,
-  iter = 10000,
-  nimps = 20)
-
-# print output
-output(intensive_cursio_1pl)
-
-# cursio 2pl model
-intensive_cursio_2pl <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = b0i b1i u0i',
-  fixed = 'time occasion group',
-  model = '
-    level2:
-    b0i ~ 1 group;
-    b1i ~ 1 group;
-    b0i ~~ b1i;
-    level1:
-    y ~ 1@b0i time@b1i;
-    missingness:
-    u0i ~ intercept;
-    m ~ intercept@u0i occasion occasion*u0i;',
-  seed = 90291,
-  burn = 50000,
-  iter = 50000,
-  nimps = 20)
-
-# print output
-output(intensive_cursio_2pl)
-
-
-#------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
 #------------------------------------------------------------------------------#
 
 int_obs <- plot_means(m ~ time | group, 
                       model = intensive_tdummy,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "B. Observed Probabilities (Intensive Data)",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 int_obs_f4 <- plot_means(m ~ time | group, 
                       model = intensive_tdummy,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "Observed Probabilities",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 int_dum <- plot_means(m.1.probability ~ time | group, 
                       model = intensive_tdummy,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "Dummy Coded Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 int_lin <- plot_means(m.1.probability ~ time | group, 
                       model = intensive_tlin,
-                      ylab = "Missingness Probability",
+                      ylab = "Conditional Dropout Probability",
                       title = "Linear Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
 int_quad <- plot_means(m.1.probability ~ time | group, 
                        model = intensive_tquad,
-                       ylab = "Missingness Probability",
+                       ylab = "Conditional Dropout Probability",
                        title = "Quadratic Time",
                        group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
@@ -486,38 +443,40 @@ summary(pmiss_intensive_tquad$m.1.probability - pmiss_intensive_obs$m)
 # output(intensive_wc)
 
 #------------------------------------------------------------------------------#
-# FIGURE 2 ----
+# FIGURE 5 ----
 #------------------------------------------------------------------------------#
 
-figure2 <- gro_obs / int_obs
-
-# ggsave(
-#   filename = "~/desktop/Figure 2. Obs Missingness.pdf",
-#   plot = figure2,
-#   width = 8.5,
-#   height = 11,
-#   units = "in"
-# )
-
-#------------------------------------------------------------------------------#
-# FIGURE 3 AND 4 ----
-#------------------------------------------------------------------------------#
-
-figure3 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
-figure4 <- int_obs_f4 / int_lin / int_quad / int_dum
+figure5 <- gro_obs / int_obs
 
 ggsave(
-  filename = "~/desktop/Figure 3. Time Related (Growth).pdf",
-  plot = figure3,
+  filename = "~/desktop/Figure 5. Obs Missingness.pdf",
+  plot = figure5,
+  width = 8.5,
+  height = 11,
+  units = "in"
+)
+
+#------------------------------------------------------------------------------#
+# FIGURE 6 AND 7 ----
+#------------------------------------------------------------------------------#
+
+figure6 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
+figure7 <- int_obs_f4 / int_lin / int_quad / int_dum
+
+ggsave(
+  filename = "~/desktop/Figure 6. Time Related (Growth).pdf",
+  plot = figure6,
   width = 8.5,
   height = 11,
   units = "in"
 )
 
 ggsave(
-  filename = "~/desktop/Figure 4. Time Related (Intermittent).pdf",
-  plot = figure4,
+  filename = "~/desktop/Figure 7. Time Related (Intermittent).pdf",
+  plot = figure7,
   width = 8.5,
   height = 11,
   units = "in"
 )
+
+
