@@ -60,7 +60,7 @@ output(growth_mar)
 icc_growth <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
@@ -80,10 +80,10 @@ output(icc_growth)
 growth_tlin <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm group',
   latent = 'id = alpha beta',
   fixed = 'time group',
   model = '
@@ -97,8 +97,7 @@ growth_tlin <- rblimp(
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
   burn = 10000,
-  iter = 10000,
-  nimps = 20)
+  iter = 10000)
 
 # print output
 output(growth_tlin)
@@ -107,10 +106,10 @@ output(growth_tlin)
 growth_tquad <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm group',
   latent = 'id = alpha beta',
   fixed = 'time group',
   model = '
@@ -124,8 +123,7 @@ growth_tquad <- rblimp(
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
   burn = 10000,
-  iter = 10000,
-  nimps = 20)
+  iter = 10000)
 
 # print output
 output(growth_tquad)
@@ -134,13 +132,12 @@ output(growth_tquad)
 growth_tdum <- rblimp(
   data = growth,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
+  ordinal = 'm',
   latent = 'id = alpha beta',
-  fixed = 'occasion time group',
+  fixed = 'time group',
   model = '
     level2:
     alpha ~ 1 group;
@@ -159,101 +156,95 @@ growth_tdum <- rblimp(
 # print output
 output(growth_tdum)
 
-gro_td <- plot_means(y.predicted ~ time | group, 
-                     model = growth_tdum,
-                     ylab = "Y",
-                     title = "Time Dummy Model-Implied Means (Growth Data)",
-                     group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
-
 #------------------------------------------------------------------------------#
 # CURSIO ET AL. MODEL (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
-cursio_1pl <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = alpha beta u0i',
-  fixed = 'occasion group time',
-  model = '
-    level2:
-    alpha ~ 1 group;
-    beta ~ 1 group;
-    alpha ~~ beta;
-    level1:
-    y ~ 1@alpha time@beta;
-    missingness:
-    u0i ~ intercept;
-    m ~ intercept@u0i occasion;',
-  seed = 90291,
-  burn = 10000,
-  iter = 10000,
-  nimps = 20)
-
-# print output
-output(cursio_1pl)
-
-# cursio 2pl model
-cursio_2pl <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = alpha beta u0i',
-  fixed = 'time occasion group',
-  model = '
-    level2:
-    alpha ~ 1 group;
-    beta ~ 1 group;
-    alpha ~~ beta;
-    level1:
-    y ~ 1@alpha time@beta;
-    missingness:
-    u0i ~ intercept;
-    m ~ intercept@u0i occasion occasion*u0i;',
-  seed = 90291,
-  burn = 50000,
-  iter = 50000,
-  nimps = 20)
-
-# print output
-output(cursio_2pl)
-
-# cursio 2pl model
-growth_cursio_2pl_cent <- rblimp(
-  data = growth,
-  clusterid = 'id', 
-  transform = 'm = ismissing(y)',
-  # timeid = 'occasion',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm group',
-  nominal = 'occasion',
-  latent = 'id = alpha beta u0i',
-  fixed = 'time occasion group',
-  model = '
-    level2:
-    alpha ~ 1 group;
-    beta ~ 1 group;
-    alpha ~~ beta;
-    level1:
-    y ~ 1@alpha time@beta;
-    missingness:
-    u0i ~ intercept@0;
-    m ~ intercept occasion u0i@1 occasion*u0i | intercept@0;',
-  seed = 90291,
-  burn = 50000,
-  iter = 50000,
-  nimps = 20)
-
-# print output
-output(growth_cursio_2pl_cent)
+# cursio_1pl <- rblimp(
+#   data = growth,
+#   clusterid = 'id', 
+#   transform = 'm = ismissing(y)',
+#   # timeid = 'occasion',
+#   # dropout = 'm = y (missing)',
+#   ordinal = 'm group',
+#   nominal = 'occasion',
+#   latent = 'id = alpha beta u0i',
+#   fixed = 'occasion group time',
+#   model = '
+#     level2:
+#     alpha ~ 1 group;
+#     beta ~ 1 group;
+#     alpha ~~ beta;
+#     level1:
+#     y ~ 1@alpha time@beta;
+#     missingness:
+#     u0i ~ intercept;
+#     m ~ intercept@u0i occasion;',
+#   seed = 90291,
+#   burn = 10000,
+#   iter = 10000,
+#   nimps = 20)
+# 
+# # print output
+# output(cursio_1pl)
+# 
+# # cursio 2pl model
+# cursio_2pl <- rblimp(
+#   data = growth,
+#   clusterid = 'id', 
+#   transform = 'm = ismissing(y)',
+#   # timeid = 'occasion',
+#   # dropout = 'm = y (missing)',
+#   ordinal = 'm group',
+#   nominal = 'occasion',
+#   latent = 'id = alpha beta u0i',
+#   fixed = 'time occasion group',
+#   model = '
+#     level2:
+#     alpha ~ 1 group;
+#     beta ~ 1 group;
+#     alpha ~~ beta;
+#     level1:
+#     y ~ 1@alpha time@beta;
+#     missingness:
+#     u0i ~ intercept;
+#     m ~ intercept@u0i occasion occasion*u0i;',
+#   seed = 90291,
+#   burn = 50000,
+#   iter = 50000,
+#   nimps = 20)
+# 
+# # print output
+# output(cursio_2pl)
+# 
+# # cursio 2pl model
+# growth_cursio_2pl_cent <- rblimp(
+#   data = growth,
+#   clusterid = 'id', 
+#   transform = 'm = ismissing(y)',
+#   # timeid = 'occasion',
+#   # dropout = 'm = y (missing)',
+#   ordinal = 'm group',
+#   nominal = 'occasion',
+#   latent = 'id = alpha beta u0i',
+#   fixed = 'time occasion group',
+#   model = '
+#     level2:
+#     alpha ~ 1 group;
+#     beta ~ 1 group;
+#     alpha ~~ beta;
+#     level1:
+#     y ~ 1@alpha time@beta;
+#     missingness:
+#     u0i ~ intercept@0;
+#     m ~ intercept occasion u0i@1 occasion*u0i | intercept@0;',
+#   seed = 90291,
+#   burn = 50000,
+#   iter = 50000,
+#   nimps = 20)
+# 
+# # print output
+# output(growth_cursio_2pl_cent)
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (LONGITUDINAL GROWTH) ----
@@ -263,7 +254,7 @@ gro_obs <- plot_means(m ~ time | group,
            model = growth_tdum,
            ylab = "Missingness Probability",
            title = "A. Observed Probabilities (Growth Data)",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.40)
 
 gro_obs_f3 <- plot_means(m ~ time | group, 
                       model = growth_tdum,
@@ -310,14 +301,42 @@ summary(pmiss_growth_tquad$m.1.probability - pmiss_growth_obs$m)
 # WU-CARROLL MODEL (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
-# wu-carroll model
-growth_wc <- rblimp(
+# wu-carroll model using full latent variable
+growth_wcl <- rblimp(
   data = growth,
   clusterid = 'id',
   # transform = 'm = ismissing(y)',
-  # ordinal = 'm',
-  timeid = 'time',
-  dropout = 'm = y (missing)',
+  ordinal = 'm',
+  # timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ 1@g0a group@g1a;
+    beta ~ 1@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ 1@alpha time@beta;
+    missingness:
+    m ~ intercept group alpha beta | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  seed = 90291,
+  burn = 30000,
+  iter = 30000,
+  nimps = 20)
+
+# print output
+output(growth_wcl)
+
+# residual wu-carroll model
+growth_wcr <- rblimp(
+  data = growth,
+  clusterid = 'id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  # timeid = 'time',
+  # dropout = 'm = y (missing)',
   latent = 'id = alpha beta',
   fixed = 'group time',
   model = '
@@ -333,12 +352,12 @@ growth_wc <- rblimp(
     m ~ intercept group alpha_res beta_res | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   seed = 90291,
-  burn = 20000,
-  iter = 20000,
+  burn = 30000,
+  iter = 30000,
   nimps = 20)
 
 # print output
-output(growth_wc)
+output(growth_wcr)
 
 #------------------------------------------------------------------------------#
 # PLOT GROWTH CURVES (LONGITUDINAL GROWTH) ----
@@ -350,10 +369,22 @@ gro_mar <- plot_means(y.predicted ~ time | group,
                       title = "MAR Model-Implied Means (Growth Data)",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
 
-gro_wc <- plot_means(y.predicted ~ time | group, 
-                      model = growth_wc,
+gro_td <- plot_means(y.predicted ~ time | group, 
+                     model = growth_tdum,
+                     ylab = "Y",
+                     title = "Time Dummy Model-Implied Means (Growth Data)",
+                     group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+
+gro_wcl <- plot_means(y.predicted ~ time | group, 
+                      model = growth_wcl,
                       ylab = "Y",
                       title = "W-C Model-Implied Means (Growth Data)",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+
+gro_wcr <- plot_means(y.predicted ~ time | group, 
+                      model = growth_wcr,
+                      ylab = "Y",
+                      title = "Res. W-C Model-Implied Means (Growth Data)",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
 
 #------------------------------------------------------------------------------#
