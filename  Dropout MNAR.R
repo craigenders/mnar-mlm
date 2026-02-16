@@ -142,8 +142,8 @@ growth_tdum <- rblimp(
     m ~ intercept@-3 | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   seed = 90291,
-  burn = 20000,
-  iter = 20000)
+  burn = 10000,
+  iter = 10000)
 
 # print output
 output(growth_tdum)
@@ -152,35 +152,40 @@ output(growth_tdum)
 # PLOT MISSINGNESS PROBABILITIES (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
+ymax <- .40
+ymin <- 0
+
 gro_obs <- plot_means(m ~ time | group, 
            model = growth_tdum,
            ylab = "Conditional Dropout Probability",
            title = "A. Observed Probabilities (Growth Data)",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_obs_f3 <- plot_means(m ~ time | group, 
                       model = growth_tdum,
                       ylab = "Conditional Dropout Probability",
                       title = "Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_dum <- plot_means(m.1.probability ~ time | group, 
            model = growth_tdum,
            ylab = "Conditional Dropout Probability",
            title = "Dummy Coded Time",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_lin <- plot_means(m.1.probability ~ time | group, 
                       model = growth_tlin,
                       ylab = "Conditional Dropout Probability",
                       title = "Linear Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_quad <- plot_means(m.1.probability ~ time | group, 
                       model = growth_tquad,
                       ylab = "Conditional Dropout Probability",
                       title = "Quadratic Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+
+gro_obs; gro_dum; gro_lin; gro_quad
 
 # compute marginal probabilities (average individual probabilities) by time and group
 pmiss_growth_obs <- aggregate(m ~ time + group, data = growth_tdum@average_imp, mean)
@@ -202,6 +207,33 @@ summary(pmiss_growth_tquad$m.1.probability - pmiss_growth_obs$m)
 #------------------------------------------------------------------------------#
 # WU-CARROLL MODEL (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
+
+# wu-carroll model
+growth_wcl <- rblimp(
+  data = growth,
+  clusterid = 'id',
+  # timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    d = ifelse(time > 0, 1, 0);
+    m ~ intercept@-3 d*alpha d*beta | intercept@0;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(growth_wcl)
 
 # residual wu-carroll model
 growth_wcr <- rblimp(
@@ -226,38 +258,11 @@ growth_wcr <- rblimp(
     m ~ intercept@-3 d*alpha_res d*beta_res | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   seed = 90291,
-  burn = 60000,
-  iter = 60000)
+  burn = 50000,
+  iter = 50000)
 
 # print output
 output(growth_wcr)
-
-# wu-carroll model
-growth_wcl <- rblimp(
-  data = growth,
-  clusterid = 'id',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
-  latent = 'id = alpha beta',
-  fixed = 'group time',
-  model = '
-    level2:
-    alpha ~ intercept@g0a group@g1a;
-    beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
-    level1:
-    y ~ intercept@alpha time@beta;
-    missingness:
-    d = ifelse(time > 0, 1, 0);
-    m ~ intercept@-3 d*alpha d*beta | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  seed = 90291,
-  burn = 20000,
-  iter = 20000)
-
-# print output
-output(growth_wcl)
 
 
 #------------------------------------------------------------------------------#
