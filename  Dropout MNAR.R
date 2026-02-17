@@ -38,17 +38,20 @@ growth_mar <- rblimp(
   data = growth,
   clusterid = 'id', 
   latent = 'id = alpha beta',
+  ordinal = 'group',
   fixed = 'group time',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
     y ~ intercept@alpha time@beta;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 10000,
-  iter = 10000)
+  iter = 10000,
+  nimps = 20)
 
 # print output
 output(growth_mar)
@@ -133,17 +136,18 @@ growth_tdum <- rblimp(
   fixed = 'time group',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
     m ~ intercept@-3 | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_tdum)
@@ -228,6 +232,7 @@ growth_wcl <- rblimp(
     d = ifelse(time > 0, 1, 0);
     m ~ intercept@-3 d*alpha d*beta | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 50000,
   iter = 50000)
@@ -257,6 +262,7 @@ growth_wcr <- rblimp(
     d = ifelse(time > 0, 1, 0);
     m ~ intercept@-3 d*alpha_res d*beta_res | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 50000,
   iter = 50000)
@@ -264,34 +270,40 @@ growth_wcr <- rblimp(
 # print output
 output(growth_wcr)
 
-
 #------------------------------------------------------------------------------#
 # PLOT GROWTH CURVES (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
-p_gro_mar <- plot_means(y.predicted ~ time | group, 
+
+p_gro_mar <- plot_means(y.predicted ~ time | group,
                       model = growth_mar,
                       ylab = "Y",
                       title = "MAR Model-Implied Means (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+                      group_labels = c("0" = "0", "1" = "1"),
+                      use_latent_growth = TRUE) + ylim(0, 7)
 
 p_gro_dum <- plot_means(y.predicted ~ time | group, 
                       model = growth_tdum,
                       ylab = "Y",
                       title = "Time Dummy Model-Implied Means (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+                      group_labels = c("0" = "0", "1" = "1"),
+                      use_latent_growth = TRUE) + ylim(0, 7)
+
+p_gro_wcl <- plot_means(y.predicted ~ time | group, 
+                        model = growth_wcl,
+                        ylab = "Y",
+                        title = "W-C Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
 
 p_gro_wcr <- plot_means(y.predicted ~ time | group, 
                      model = growth_wcr,
                      ylab = "Y",
                      title = "Res W-C Model-Implied Means (Growth Data)",
-                     group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+                     group_labels = c("0" = "0", "1" = "1"),
+                     use_latent_growth = TRUE) + ylim(0, 7)
 
-p_gro_wcl <- plot_means(y.predicted ~ time | group, 
-                      model = growth_wcl,
-                      ylab = "Y",
-                      title = "W-C Model-Implied Means (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+p_gro_mar; p_gro_dum; p_gro_wcl; p_gro_wcr
 
 #------------------------------------------------------------------------------#
 # MAR (INTENSIVE MEASUREMENTS) ----

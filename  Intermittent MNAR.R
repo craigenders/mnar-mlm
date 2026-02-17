@@ -46,8 +46,7 @@ growth_mar <- rblimp(
     y ~ 1@alpha time@beta;',
   seed = 90291,
   burn = 10000,
-  iter = 10000,
-  nimps = 20)
+  iter = 10000)
 
 # print output
 output(growth_mar)
@@ -150,8 +149,7 @@ growth_tdum <- rblimp(
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   seed = 90291,
   burn = 10000,
-  iter = 10000,
-  nimps = 20)
+  iter = 10000)
 
 # print output
 output(growth_tdum)
@@ -250,35 +248,40 @@ output(growth_tdum)
 # PLOT MISSINGNESS PROBABILITIES (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
+ymax <- .40
+ymin <- 0
+
 gro_obs <- plot_means(m ~ time | group, 
            model = growth_tdum,
            ylab = "Missingness Probability",
            title = "A. Observed Probabilities (Growth Data)",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.40)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_obs_f3 <- plot_means(m ~ time | group, 
                       model = growth_tdum,
                       ylab = "Missingness Probability",
                       title = "Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_dum <- plot_means(m.1.probability ~ time | group, 
            model = growth_tdum,
            ylab = "Missingness Probability",
            title = "Dummy Coded Time",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+           group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_lin <- plot_means(m.1.probability ~ time | group, 
                       model = growth_tlin,
                       ylab = "Missingness Probability",
                       title = "Linear Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
 
 gro_quad <- plot_means(m.1.probability ~ time | group, 
                       model = growth_tquad,
                       ylab = "Missingness Probability",
                       title = "Quadratic Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+
+gro_obs; gro_dum; gro_lin; gro_quad
 
 # compute marginal probabilities (average individual probabilities) by time and group
 pmiss_growth_obs <- aggregate(m ~ time + group, data = growth_tdum@average_imp, mean)
