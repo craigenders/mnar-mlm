@@ -56,7 +56,6 @@ output(growth_com)
 growth_mar <- rblimp(
   data = growth,
   clusterid = 'id', 
-  ordinal = 'group',
   latent = 'id = alpha beta',
   fixed = 'group time',
   model = '
@@ -260,9 +259,8 @@ growth_wcl <- rblimp(
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
-  burn = 30000,
-  iter = 30000,
-  nimps = 20)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_wcl)
@@ -291,9 +289,8 @@ growth_wcr <- rblimp(
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
-  burn = 30000,
-  iter = 30000,
-  nimps = 20)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_wcr)
@@ -324,8 +321,8 @@ growth_dky <- rblimp(
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
-  burn = 50000,
-  iter = 50000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_dky)
