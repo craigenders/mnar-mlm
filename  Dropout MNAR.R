@@ -23,12 +23,39 @@ filepath2 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intens
 growth <- read.csv(filepath1, stringsAsFactors = T)
 intensive <- read.csv(filepath2, stringsAsFactors = T)
 
+growth_comp <- growth
+intensive_comp <- intensive
+
 growth <- growth[!is.na(growth$m),]
 intensive <- intensive[!is.na(intensive$m),]
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
+
+#------------------------------------------------------------------------------#
+# COMPLETE DATA (LONGITUDINAL GROWTH) ----
+#------------------------------------------------------------------------------#
+
+growth_com <- rblimp(
+  data = growth_comp,
+  clusterid = 'id', 
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  seed = 90291,
+  burn = 10000,
+  iter = 10000)
+
+# print output
+output(growth_com)
 
 #------------------------------------------------------------------------------#
 # MAR (LONGITUDINAL GROWTH) ----
@@ -50,8 +77,7 @@ growth_mar <- rblimp(
   parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 10000,
-  iter = 10000,
-  nimps = 20)
+  iter = 10000)
 
 # print output
 output(growth_mar)
@@ -423,15 +449,15 @@ extract_growth_params <- function(object, method) {
   res
 }
 
-mar_tab  <- extract_growth_params(growth_mar,  "MAR")
+com_tab <- extract_growth_params(growth_com, "COM")
+mar_tab <- extract_growth_params(growth_mar, "MAR")
 dum_tab <- extract_growth_params(growth_tdum, "DUM")
 wcl_tab <- extract_growth_params(growth_wcl, "WCL")
 wcr_tab <- extract_growth_params(growth_wcr, "WCR")
 dky_tab <- extract_growth_params(growth_dky, "DKL")
 dkr_tab <- extract_growth_params(growth_dkr, "DKR")
 
-cbind(mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab)
-
+cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab)
 
 #------------------------------------------------------------------------------#
 # MAR (INTENSIVE MEASUREMENTS) ----

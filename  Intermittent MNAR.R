@@ -28,6 +28,30 @@ source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/funct
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
+# COMPLETE DATA (LONGITUDINAL GROWTH) ----
+#------------------------------------------------------------------------------#
+
+growth_com <- rblimp(
+  data = growth,
+  clusterid = 'id', 
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  seed = 90291,
+  burn = 10000,
+  iter = 10000)
+
+# print output
+output(growth_com)
+
+#------------------------------------------------------------------------------#
 # MAR (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
@@ -39,11 +63,12 @@ growth_mar <- rblimp(
   fixed = 'group time',
   model = '
     level2:
-    alpha ~ 1 group;
-    beta ~ 1 group;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;',
+    y ~ intercept@alpha time@beta;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -87,11 +112,11 @@ growth_tlin <- rblimp(
   fixed = 'time group',
   model = '
     level2:
-    alpha ~ 1 group;
-    beta ~ 1 group;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
@@ -117,7 +142,7 @@ growth_tquad <- rblimp(
     beta ~ 1 group;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
@@ -139,14 +164,15 @@ growth_tdum <- rblimp(
   fixed = 'time group',
   model = '
     level2:
-    alpha ~ 1 group;
-    beta ~ 1 group;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     m ~ intercept group | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -174,7 +200,7 @@ output(growth_tdum)
 #     beta ~ 1 group;
 #     alpha ~~ beta;
 #     level1:
-#     y ~ 1@alpha time@beta;
+#     y ~ intercept@alpha time@beta;
 #     missingness:
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion;',
@@ -203,7 +229,7 @@ output(growth_tdum)
 #     beta ~ 1 group;
 #     alpha ~~ beta;
 #     level1:
-#     y ~ 1@alpha time@beta;
+#     y ~ intercept@alpha time@beta;
 #     missingness:
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion occasion*u0i;',
@@ -232,7 +258,7 @@ output(growth_tdum)
 #     beta ~ 1 group;
 #     alpha ~~ beta;
 #     level1:
-#     y ~ 1@alpha time@beta;
+#     y ~ intercept@alpha time@beta;
 #     missingness:
 #     u0i ~ intercept@0;
 #     m ~ intercept occasion u0i@1 occasion*u0i | intercept@0;',
@@ -316,14 +342,15 @@ growth_wcl <- rblimp(
   fixed = 'group time',
   model = '
     level2:
-    alpha ~ 1@g0a group@g1a;
-    beta ~ 1@g0b group@g1b;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     m ~ intercept group alpha beta | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 30000,
   iter = 30000,
@@ -344,16 +371,17 @@ growth_wcr <- rblimp(
   fixed = 'group time',
   model = '
     level2:
-    alpha ~ 1@g0a group@g1a;
-    beta ~ 1@g0b group@g1b;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     alpha_res = alpha - (g0a + g1a*group);
     beta_res = beta - (g0b + g1b*group);
     m ~ intercept group alpha_res beta_res | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
   seed = 90291,
   burn = 30000,
   iter = 30000,
@@ -363,32 +391,204 @@ growth_wcr <- rblimp(
 output(growth_wcr)
 
 #------------------------------------------------------------------------------#
+# DIGGLE-KENWARD MODEL (LONGITUDINAL GROWTH) ----
+#------------------------------------------------------------------------------#
+
+# diggle-kenward model
+growth_dky <- rblimp(
+  data = growth,
+  clusterid = 'id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    d = ifelse(time > 0, 1, 0);
+    m ~ intercept group y y.lag | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(growth_dky)
+
+# diggle-kenward model
+growth_dkr <- rblimp(
+  data = growth,
+  clusterid = 'id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    d = ifelse(time > 0, 1, 0);
+    yhat = alpha + beta*time;
+    ylaghat = alpha + beta*(time - 1);
+    m ~ intercept group (y - yhat) (y.lag - ylaghat) | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(growth_dkr)
+
+#------------------------------------------------------------------------------#
+# DISAGGREGATED MODEL (LONGITUDINAL GROWTH) ----
+#------------------------------------------------------------------------------#
+
+# diggle-kenward model
+growth_dis <- rblimp(
+  data = growth,
+  clusterid = 'id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    alpha_res = alpha - (g0a + g1a*group);
+    beta_res = beta - (g0b + g1b*group);
+    d = ifelse(time > 0, 1, 0);
+    yhat = alpha + beta*time;
+    ylaghat = alpha + beta*(time - 1);
+    m ~ intercept group alpha_res beta_res (y - yhat) (y.lag - ylaghat) | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(growth_dis)
+
+#------------------------------------------------------------------------------#
 # PLOT GROWTH CURVES (LONGITUDINAL GROWTH) ----
 #------------------------------------------------------------------------------#
 
-gro_mar <- plot_means(y.predicted ~ time | group, 
-                      model = growth_mar,
-                      ylab = "Y",
-                      title = "MAR Model-Implied Means (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+p_gro_mar <- plot_means(y.predicted ~ time | group,
+                        model = growth_mar,
+                        ylab = "Y",
+                        title = "MAR Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
 
-gro_td <- plot_means(y.predicted ~ time | group, 
-                     model = growth_tdum,
-                     ylab = "Y",
-                     title = "Time Dummy Model-Implied Means (Growth Data)",
-                     group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+p_gro_dum <- plot_means(y.predicted ~ time | group, 
+                        model = growth_tdum,
+                        ylab = "Y",
+                        title = "Time Dummy Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
 
-gro_wcl <- plot_means(y.predicted ~ time | group, 
-                      model = growth_wcl,
-                      ylab = "Y",
-                      title = "W-C Model-Implied Means (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+p_gro_wcl <- plot_means(y.predicted ~ time | group, 
+                        model = growth_wcl,
+                        ylab = "Y",
+                        title = "W-C Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
 
-gro_wcr <- plot_means(y.predicted ~ time | group, 
-                      model = growth_wcr,
-                      ylab = "Y",
-                      title = "Res. W-C Model-Implied Means (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(1,7)
+p_gro_wcr <- plot_means(y.predicted ~ time | group, 
+                        model = growth_wcr,
+                        ylab = "Y",
+                        title = "Res W-C Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
+
+p_gro_dky <- plot_means(y.predicted ~ time | group, 
+                        model = growth_dky,
+                        ylab = "Y",
+                        title = "W-C Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
+
+p_gro_dkr <- plot_means(y.predicted ~ time | group, 
+                        model = growth_dkr,
+                        ylab = "Y",
+                        title = "Res W-C Model-Implied Means (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
+
+p_gro_mar; p_gro_dum; p_gro_wcl; p_gro_wcr; p_gro_dky; p_gro_dkr
+
+#------------------------------------------------------------------------------#
+# EXTRACT ESTIMATES (LONGITUDINAL GROWTH) ----
+#------------------------------------------------------------------------------#
+
+extract_growth_params <- function(object, method) {
+  
+  tab <- object@estimates
+  
+  rows <- c(
+    "alpha ~ Intercept",
+    "beta ~ Intercept",
+    "alpha ~ group",
+    "beta ~ group",
+    "alpha residual variance",
+    "beta residual variance",
+    "Cor( alpha, beta )",
+    "y residual variance",
+    "Parameter: diff"
+  )
+  
+  res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
+  
+  # Rename rows to cleaner presentation labels
+  rownames(res) <- c(
+    "Intercept (G = 0)",
+    "Slope (G = 0)",
+    "Intercept Diff.",
+    "Slope Diff.",
+    "Var(Intercept)",
+    "Var(Slope)",
+    "Cor(Intercept, Slope)",
+    "Var(Residual)",
+    "Endpoint Mean Diff."
+  )
+  
+  colnames(res) <- c(
+    paste0("Est_", method),
+    paste0("SD_", method)
+  )
+  
+  res
+}
+
+com_tab <- extract_growth_params(growth_com, "COM")
+mar_tab <- extract_growth_params(growth_mar, "MAR")
+dum_tab <- extract_growth_params(growth_tdum, "DUM")
+wcl_tab <- extract_growth_params(growth_wcl, "WCL")
+wcr_tab <- extract_growth_params(growth_wcr, "WCR")
+dky_tab <- extract_growth_params(growth_dky, "DKL")
+dkr_tab <- extract_growth_params(growth_dkr, "DKR")
+dis_tab <- extract_growth_params(growth_dis, "DIS")
+
+cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab,dis_tab)
 
 #------------------------------------------------------------------------------#
 # MAR (INTENSIVE MEASUREMENTS) ----
@@ -408,8 +608,8 @@ intensive_mar <- rblimp(
     logvar ~ 1;
     alpha beta logvar ~~ alpha beta logvar;
     level1:
-    y ~ 1@alpha x@beta;
-    var(y) ~ 1@logvar;',
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@logvar;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -459,7 +659,7 @@ intensive_tlin <- rblimp(
     beta ~ 1 group;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha x@beta;
+    y ~ intercept@alpha x@beta;
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
@@ -487,7 +687,7 @@ intensive_tquad <- rblimp(
     beta ~ 1 group;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha x@beta;
+    y ~ intercept@alpha x@beta;
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
@@ -516,7 +716,7 @@ intensive_tdum <- rblimp(
     beta ~ 1 group;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha x@beta;
+    y ~ intercept@alpha x@beta;
     missingness:
     m ~ intercept group | intercept;
     { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
@@ -548,7 +748,7 @@ intensive_cursio_1pl <- rblimp(
     beta ~ 1 group;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     u0i ~ intercept;
     m ~ intercept@u0i occasion;',
@@ -577,7 +777,7 @@ intensive_cursio_2pl <- rblimp(
     beta ~ 1 group;
     alpha ~~ beta;
     level1:
-    y ~ 1@alpha time@beta;
+    y ~ intercept@alpha time@beta;
     missingness:
     u0i ~ intercept;
     m ~ intercept@u0i occasion occasion*u0i;',
@@ -657,13 +857,13 @@ intensive_wc <- rblimp(
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ 1@g0a group@g1a;
-    beta ~ 1@g0b group@g1b;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
     logvar ~ 1;
     alpha beta logvar ~~ alpha beta logvar;
     level1:
-    y ~ 1@alpha x@beta;
-    var(y) ~ 1@logvar;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@logvar;
     missingness:
     alpha_res = alpha - (g0a + g1a*group);
     m ~ intercept group alpha_res | intercept;
