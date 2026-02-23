@@ -105,10 +105,10 @@ output(icc_intensive)
 intensive_tlin <- rblimp(
   data = intensive,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm',
   latent = 'id = alpha beta',
   fixed = 'time group',
   center = 'groupmean = x',
@@ -132,10 +132,10 @@ output(intensive_tlin)
 intensive_tquad <- rblimp(
   data = intensive,
   clusterid = 'id', 
-  transform = 'm = ismissing(y)',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm',
   latent = 'id = alpha beta',
   fixed = 'time group',
   center = 'groupmean = x',
@@ -226,37 +226,37 @@ int_obs <- plot_means(m ~ time | group,
                       model = intensive_tdum,
                       ylab = "Missingness Probability",
                       title = "A. Observed Probabilities (Growth Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
 
-int_obs_f3 <- plot_means(m ~ time | group, 
+int_obs_f4 <- plot_means(m ~ time | group, 
                          model = intensive_tdum,
                          ylab = "Missingness Probability",
                          title = "Observed Probabilities",
-                         group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+                         group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
 
 int_dumf <- plot_means(m.1.probability ~ time | group, 
                       model = intensive_tdumf,
                       ylab = "Missingness Probability",
                       title = "Dummy Coded Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
 
 int_dum <- plot_means(m.1.probability ~ time | group, 
                       model = intensive_tdum,
                       ylab = "Missingness Probability",
                       title = "Dummy Coded Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
 
 int_lin <- plot_means(m.1.probability ~ time | group, 
                       model = intensive_tlin,
                       ylab = "Missingness Probability",
                       title = "Linear Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
 
 int_quad <- plot_means(m.1.probability ~ time | group, 
                        model = intensive_tquad,
                        ylab = "Missingness Probability",
                        title = "Quadratic Time",
-                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax)
+                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
 
 int_obs; int_dum; int_lin; int_quad
 
@@ -512,19 +512,10 @@ figure2 <- gro_obs / int_obs
 # )
 
 #------------------------------------------------------------------------------#
-# FIGURE 3 AND 4 ----
+# FIGURE 4 ----
 #------------------------------------------------------------------------------#
 
-figure3 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
 figure4 <- int_obs_f4 / int_lin / int_quad / int_dum
-
-ggsave(
-  filename = "~/desktop/Figure 3. Time Related (Growth).pdf",
-  plot = figure3,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
 
 ggsave(
   filename = "~/desktop/Figure 4. Time Related (Intermittent).pdf",

@@ -86,9 +86,9 @@ growth_tlin <- rblimp(
   data = growth,
   clusterid = 'id', 
   # transform = 'm = ismissing(y)',
+  ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  ordinal = 'm',
   latent = 'id = alpha beta',
   fixed = 'time group',
   model = '
@@ -125,9 +125,9 @@ output(growth_tlin)
 growth_tquad <- rblimp(
   data = growth,
   clusterid = 'id', 
-  # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
+  # timeid = 'time',
   latent = 'id = alpha beta',
   fixed = 'time group',
   model = '
@@ -150,9 +150,9 @@ output(growth_tquad)
 growth_tdum <- rblimp(
   data = growth,
   clusterid = 'id', 
+  ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (binary)',
-  ordinal = 'm',
   latent = 'id = alpha beta',
   fixed = 'time group',
   model = '

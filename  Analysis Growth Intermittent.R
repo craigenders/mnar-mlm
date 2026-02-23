@@ -502,32 +502,23 @@ cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab,dis_tab)
 
 figure2 <- gro_obs / int_obs
 
-# ggsave(
-#   filename = "~/desktop/Figure 2. Obs Missingness.pdf",
-#   plot = figure2,
-#   width = 8.5,
-#   height = 11,
-#   units = "in"
-# )
-
-#------------------------------------------------------------------------------#
-# FIGURE 3 AND 4 ----
-#------------------------------------------------------------------------------#
-
-figure3 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
-figure4 <- int_obs_f4 / int_lin / int_quad / int_dum
-
 ggsave(
-  filename = "~/desktop/Figure 3. Time Related (Growth).pdf",
-  plot = figure3,
+  filename = "~/desktop/Figure 2. Obs Missingness.pdf",
+  plot = figure2,
   width = 8.5,
   height = 11,
   units = "in"
 )
 
+#------------------------------------------------------------------------------#
+# FIGURE 3 ----
+#------------------------------------------------------------------------------#
+
+figure3 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
+
 ggsave(
-  filename = "~/desktop/Figure 4. Time Related (Intermittent).pdf",
-  plot = figure4,
+  filename = "~/desktop/Figure 3. Time Related (Growth).pdf",
+  plot = figure3,
   width = 8.5,
   height = 11,
   units = "in"
