@@ -44,7 +44,9 @@ growth_com <- rblimp(
     alpha ~~ beta;
     level1:
     y ~ intercept@alpha time@beta;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -69,7 +71,9 @@ growth_mar <- rblimp(
     alpha ~~ beta;
     level1:
     y ~ intercept@alpha time@beta;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -165,7 +169,9 @@ growth_tdum <- rblimp(
     missingness:
     m ~ intercept@-3 | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -253,7 +259,9 @@ growth_wcl <- rblimp(
     d = ifelse(time > 0, 1, 0);
     m ~ intercept@-3 d*alpha d*beta | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -283,7 +291,9 @@ growth_wcr <- rblimp(
     d = ifelse(time > 0, 1, 0);
     m ~ intercept@-3 d*alpha_res d*beta_res | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 60000,
   iter = 60000)
@@ -315,7 +325,9 @@ growth_dky <- rblimp(
     d = ifelse(time > 0, 1, 0);
     m ~ intercept@-3 d*y d*y.lag | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -345,7 +357,9 @@ growth_dkr <- rblimp(
     ylaghat = alpha + beta*(time - 1);
     m ~ intercept@-3 d*(y - yhat) d*(y.lag - ylaghat) | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 100000,
   iter = 100000)
@@ -381,7 +395,9 @@ growth_dis <- rblimp(
     beta_res = beta - (g0b + g1b*group);
     m ~ intercept@-3 d*(y - yhat) d*(y.lag - ylaghat) d*alpha_res d*beta_res | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = 'diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b))',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.residvar);',
   seed = 90291,
   burn = 20000,
   iter = 20000)
@@ -454,7 +470,8 @@ extract_growth_params <- function(object, method) {
     "beta residual variance",
     "Cor( alpha, beta )",
     "y residual variance",
-    "Parameter: diff"
+    "Parameter: diff",
+    "Parameter: d_diff"
   )
   
   res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
@@ -469,7 +486,8 @@ extract_growth_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Intercept, Slope)",
     "Var(Residual)",
-    "Endpoint Mean Diff."
+    "Endpoint Mean Diff.",
+    "Std. Mean Diff."
   )
   
   colnames(res) <- c(
