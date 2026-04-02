@@ -34,8 +34,8 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 
 growth_com <- rblimp(
   data = growth_comp,
-  clusterid = 'id', 
-  latent = 'id = alpha beta',
+  clusterid = 'l2id', 
+  latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
     level2:
@@ -58,8 +58,8 @@ output(growth_com)
 
 growth_mar <- rblimp(
   data = growth,
-  clusterid = 'id', 
-  latent = 'id = alpha beta',
+  clusterid = 'l2id', 
+  latent = 'l2id = alpha beta',
   ordinal = 'group',
   fixed = 'group time',
   model = '
@@ -84,12 +84,12 @@ output(growth_mar)
 # linear trend
 growth_tlin <- rblimp(
   data = growth,
-  clusterid = 'id', 
+  clusterid = 'l2id', 
   # transform = 'm = ismissing(y)',
   ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
     level2:
@@ -124,11 +124,11 @@ output(growth_tlin)
 # quadratic trend
 growth_tquad <- rblimp(
   data = growth,
-  clusterid = 'id', 
+  clusterid = 'l2id', 
   # dropout = 'm = y (missing)',
   ordinal = 'm',
   # timeid = 'time',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
     level2:
@@ -149,11 +149,11 @@ output(growth_tquad)
 # dummy coded time
 growth_tdum <- rblimp(
   data = growth,
-  clusterid = 'id', 
+  clusterid = 'l2id', 
   ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (binary)',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
     level2:
@@ -236,11 +236,11 @@ summary(pmiss_growth_tquad$m.1.probability - pmiss_growth_obs$m)
 # wu-carroll model
 growth_wcl <- rblimp(
   data = growth,
-  clusterid = 'id',
+  clusterid = 'l2id',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
     level2:
@@ -264,11 +264,11 @@ output(growth_wcl)
 # residual wu-carroll model
 growth_wcr <- rblimp(
   data = growth,
-  clusterid = 'id',
+  clusterid = 'l2id',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
     level2:
@@ -298,11 +298,11 @@ output(growth_wcr)
 # diggle-kenward model
 growth_dky <- rblimp(
   data = growth,
-  clusterid = 'id',
+  clusterid = 'l2id',
   timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
     level2:
@@ -326,11 +326,11 @@ output(growth_dky)
 # diggle-kenward model
 growth_dkr <- rblimp(
   data = growth,
-  clusterid = 'id',
+  clusterid = 'l2id',
   timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
     level2:
@@ -360,11 +360,11 @@ output(growth_dkr)
 # diggle-kenward model
 growth_dis <- rblimp(
   data = growth,
-  clusterid = 'id',
+  clusterid = 'l2id',
   timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
     level2:
