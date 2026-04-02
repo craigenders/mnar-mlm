@@ -8,7 +8,8 @@ options (scipen = 999)
 library(ggplot2)
 library(patchwork)
 library(rblimp)
-set_blimp('/applications/blimp/blimp-nightly')
+set_blimp('/applications/blimp/blimp')
+# set_blimp('/applications/blimp/blimp-nightly')
 # remotes::update_packages('rblimp')
 
 #------------------------------------------------------------------------------#
@@ -19,11 +20,11 @@ set_blimp('/applications/blimp/blimp-nightly')
 filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-dropout.csv'
 
 # create data frame from github data
-intensive <- read.csv(filepath, stringsAsFactors = T)
+intensive_d <- read.csv(filepath, stringsAsFactors = T)
 
-intensive_comp <- intensive
+intensive_d_comp <- intensive_d
 
-intensive <- intensive[!is.na(intensive$m),]
+intensive_d <- intensive_d[!is.na(intensive_d$m),]
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -33,10 +34,10 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 # COMPLETE DATA (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
-intensive_mar <- rblimp(
-  data = intensive_comp,
-  clusterid = 'id', 
-  latent = 'id = alpha beta',
+intensive_d_mar <- rblimp(
+  data = intensive_d_comp,
+  clusterid = 'l2id', 
+  latent = 'l2id = alpha beta',
   fixed = 'group',
   center = 'groupmean = xcom',
   model = '
@@ -51,16 +52,16 @@ intensive_mar <- rblimp(
   iter = 10000)
 
 # print output
-output(intensive_mar)
+output(intensive_d_mar)
 
 #------------------------------------------------------------------------------#
 # MAR (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
-intensive_mar <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
-  latent = 'id = alpha beta',
+intensive_d_mar <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id', 
+  latent = 'l2id = alpha beta',
   fixed = 'group',
   center = 'groupmean = x',
   model = '
@@ -75,21 +76,21 @@ intensive_mar <- rblimp(
   iter = 10000)
 
 # print output
-output(intensive_mar)
+output(intensive_d_mar)
 
 #------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
 # linear trend
-intensive_tlin <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
+intensive_d_tlin <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id', 
   # transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'time group',
   center = 'groupmean = x',
   model = '
@@ -108,17 +109,17 @@ intensive_tlin <- rblimp(
   nimps = 20)
 
 # print output
-output(intensive_tlin)
+output(intensive_d_tlin)
 
 # quadratic trend
-intensive_tquad <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
+intensive_d_tquad <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id', 
   # transform = 'm = ismissing(y)',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm group',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'time group',
   center = 'groupmean = x',
   model = '
@@ -137,16 +138,16 @@ intensive_tquad <- rblimp(
   nimps = 20)
 
 # print output
-output(intensive_tquad)
+output(intensive_d_tquad)
 
 # dummy coded time
-intensive_tdum <- rblimp(
-  data = intensive,
-  clusterid = 'id', 
+intensive_d_tdum <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id', 
   # timeid = 'time',
   # dropout = 'm = y (missing)',
   ordinal = 'm',
-  latent = 'id = alpha beta',
+  latent = 'l2id = alpha beta',
   fixed = 'time group',
   center = 'groupmean = x',
   model = '
@@ -165,82 +166,97 @@ intensive_tdum <- rblimp(
   iter = 10000)
 
 # print output
-output(intensive_tdum)
+output(intensive_d_tdum)
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
 #------------------------------------------------------------------------------#
 
-int_obs <- plot_means(m ~ time | group, 
-                      model = intensive_tdum,
-                      ylab = "Conditional Dropout Probability",
-                      title = "B. Observed Probabilities (Intensive Data)",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+ymax <- .20
+ymin <- 0
 
-int_obs_f4 <- plot_means(m ~ time | group, 
-                      model = intensive_tdum,
-                      ylab = "Conditional Dropout Probability",
-                      title = "Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+# int_d_obs <- plot_means(m ~ time | group, 
+#                       model = intensive_d_tdum,
+#                       ylab = "Probability",
+#                       title = "B. Observed Probabilities (Intensive Data)",
+#                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
 
-int_dum <- plot_means(m.1.probability ~ time | group, 
-                      model = intensive_tdum,
-                      ylab = "Conditional Dropout Probability",
-                      title = "Dummy Coded Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+int_d_obs <- plot_means(m ~ time | group, 
+                      model = intensive_d_tdum,
+                      ylab = "Probability",
+                      title = "B. Observed Probabilities",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dotted", "solid")) +
+  geom_line(linewidth = .25)
 
-int_lin <- plot_means(m.1.probability ~ time | group, 
-                      model = intensive_tlin,
-                      ylab = "Conditional Dropout Probability",
-                      title = "Linear Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+int_d_dum <- plot_means(m.1.probability ~ time | group, 
+                      model = intensive_d_tdum,
+                      ylab = "Probability",
+                      title = "H. Dummy Coded Time",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dotted", "solid")) +
+  geom_line(linewidth = .25)
 
-int_quad <- plot_means(m.1.probability ~ time | group, 
-                       model = intensive_tquad,
-                       ylab = "Conditional Dropout Probability",
-                       title = "Quadratic Time",
-                       group_labels = c("0" = "0", "1" = "1")) + ylim(0,.30)
+int_d_lin <- plot_means(m.1.probability ~ time | group, 
+                      model = intensive_d_tlin,
+                      ylab = "Probability",
+                      title = "D. Linear Time",
+                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dotted", "solid")) +
+  geom_line(linewidth = .25)
+
+int_d_quad <- plot_means(m.1.probability ~ time | group, 
+                       model = intensive_d_tquad,
+                       ylab = "Probability",
+                       title = "F. Quadratic Time",
+                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dotted", "solid")) +
+  geom_line(linewidth = .25)
 
 # compute marginal probabilities (average individual probabilities) by time and group
-pmiss_intensive_obs <- aggregate(m ~ time + group, data = intensive_tdum@average_imp, mean)
-pmiss_intensive_tdum <- aggregate(m.1.probability ~ time + group, data = intensive_tdum@average_imp, mean)
-pmiss_intensive_tlin <- aggregate(m.1.probability ~ time + group, data = intensive_tlin@average_imp, mean)
-pmiss_intensive_tquad <- aggregate(m.1.probability ~ time + group, data = intensive_tquad@average_imp, mean)
+pmiss_intensive_d_obs <- aggregate(m ~ time + group, data = intensive_d_tdum@average_imp, mean)
+pmiss_intensive_d_tdum <- aggregate(m.1.probability ~ time + group, data = intensive_d_tdum@average_imp, mean)
+pmiss_intensive_d_tlin <- aggregate(m.1.probability ~ time + group, data = intensive_d_tlin@average_imp, mean)
+pmiss_intensive_d_tquad <- aggregate(m.1.probability ~ time + group, data = intensive_d_tquad@average_imp, mean)
 
 # compute rmse of marginal vs. observed probabilities
-rmse_int_tdum <- sqrt(mean((pmiss_intensive_tdum$m.1.probability - pmiss_intensive_obs$m)^2))
-rmse_int_tlin <- sqrt(mean((pmiss_intensive_tlin$m.1.probability - pmiss_intensive_obs$m)^2))
-rmse_int_tquad <- sqrt(mean((pmiss_intensive_tquad$m.1.probability - pmiss_intensive_obs$m)^2))
-rmse_int_tdum; rmse_int_tlin; rmse_int_tquad
+rmse_int_d_tdum <- sqrt(mean((pmiss_intensive_d_tdum$m.1.probability - pmiss_intensive_d_obs$m)^2))
+rmse_int_d_tlin <- sqrt(mean((pmiss_intensive_d_tlin$m.1.probability - pmiss_intensive_d_obs$m)^2))
+rmse_int_d_tquad <- sqrt(mean((pmiss_intensive_d_tquad$m.1.probability - pmiss_intensive_d_obs$m)^2))
+rmse_int_d_tdum; rmse_int_d_tlin; rmse_int_d_tquad
 
 # summarize difference between marginal vs. observed probabilities
-summary(pmiss_intensive_tdum$m.1.probability - pmiss_intensive_obs$m)
-summary(pmiss_intensive_tlin$m.1.probability - pmiss_intensive_obs$m)
-summary(pmiss_intensive_tquad$m.1.probability - pmiss_intensive_obs$m)
+summary(pmiss_intensive_d_tdum$m.1.probability - pmiss_intensive_d_obs$m)
+summary(pmiss_intensive_d_tlin$m.1.probability - pmiss_intensive_d_obs$m)
+summary(pmiss_intensive_d_tquad$m.1.probability - pmiss_intensive_d_obs$m)
 
 #------------------------------------------------------------------------------#
 # WU-CARROLL (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
 # residual wu-carroll
-intensive_wcr <- rblimp(
-  data = intensive,
-  clusterid = 'id',
+intensive_d_wcr <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
   # timeid = 'time',
   # dropout = 'm = y (binary)',
   ordinal = 'm',
-  latent = 'id = alpha beta logvar',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
   model = '
     level2:
     alpha ~ 1@g0a group@g1a;
     beta ~ 1@g0b group@g1b;
-    logvar ~ 1;
-    alpha beta logvar ~~ alpha beta logvar;
+    omega ~ 1;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ 1@alpha x@beta;
-    var(y) ~ 1@logvar;
+    var(y) ~ 1@omega;
     missingness:
     alpha_res = alpha - (g0a + g1a*group);
     beta_res = beta - (g0b + g1b*group);
@@ -252,27 +268,27 @@ intensive_wcr <- rblimp(
   iter = 20000)
 
 # print output
-output(intensive_wcr)
+output(intensive_d_wcr)
 
 # wu-carroll
-intensive_wcl <- rblimp(
-  data = intensive,
-  clusterid = 'id',
+intensive_d_wcl <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
   # timeid = 'time',
   # dropout = 'm = y (binary)',
   ordinal = 'm',
-  latent = 'id = alpha beta logvar',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
   model = '
     level2:
     alpha ~ 1@g0a group@g1a;
     beta ~ 1@g0b group@g1b;
-    logvar ~ 1;
-    alpha beta logvar ~~ alpha beta logvar;
+    omega ~ 1;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ 1@alpha x@beta;
-    var(y) ~ 1@logvar;
+    var(y) ~ 1@omega;
     missingness:
     d = ifelse(time > 4, 1, 0);
     m ~ intercept@-3 d*alpha d*beta | intercept@0;
@@ -282,14 +298,14 @@ intensive_wcl <- rblimp(
   iter = 20000)
 
 # print output
-output(intensive_wcl)
+output(intensive_d_wcl)
 
 
 #------------------------------------------------------------------------------#
 # FIGURE 5 ----
 #------------------------------------------------------------------------------#
 
-figure5 <- gro_obs / int_obs
+figure5 <- gro_obs / int_d_obs
 
 ggsave(
   filename = "~/desktop/Figure 5. Obs Missingness.pdf",
@@ -304,7 +320,7 @@ ggsave(
 #------------------------------------------------------------------------------#
 
 figure6 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
-figure7 <- int_obs_f4 / int_lin / int_quad / int_dum
+figure7 <- int_d_obs_f4 / int_d_lin / int_d_quad / int_d_dum
 
 ggsave(
   filename = "~/desktop/Figure 6. Time Related (Growth).pdf",
