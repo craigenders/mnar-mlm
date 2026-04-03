@@ -27,7 +27,7 @@ source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/funct
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
-# COMPLETE DATA (LONGITUDINAL GROWTH) ----
+# COMPLETE DATA ----
 #------------------------------------------------------------------------------#
 
 growth_i_com <- rblimp(
@@ -53,7 +53,7 @@ growth_i_com <- rblimp(
 output(growth_i_com)
 
 #------------------------------------------------------------------------------#
-# MAR (LONGITUDINAL GROWTH) ----
+# CMAR ----
 #------------------------------------------------------------------------------#
 
 growth_i_mar <- rblimp(
@@ -67,7 +67,8 @@ growth_i_mar <- rblimp(
     beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ intercept@alpha time@beta;',
+    y ~ intercept@alpha time@beta;
+    m ~ intercept',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
@@ -79,7 +80,7 @@ growth_i_mar <- rblimp(
 output(growth_i_mar)
 
 #------------------------------------------------------------------------------#
-# ICC FOR THE MISSINGNESS INDICATOR (LONGITUDINAL GROWTH) ----
+# ICC FOR THE MISSINGNESS INDICATOR ----
 #------------------------------------------------------------------------------#
 
 # fit unconditional model
@@ -99,7 +100,7 @@ icc_growth_i <- rblimp(
 output(icc_growth_i)
 
 #------------------------------------------------------------------------------#
-# TIME-RELATED CHANGES (LONGITUDINAL GROWTH) ----
+# TIME-RELATED CHANGES ----
 #------------------------------------------------------------------------------#
 
 # linear trend
@@ -185,7 +186,7 @@ growth_i_tdum <- rblimp(
 output(growth_i_tdum)
 
 #------------------------------------------------------------------------------#
-# PLOT MISSINGNESS PROBABILITIES (LONGITUDINAL GROWTH) ----
+# PLOT MISSINGNESS PROBABILITIES ----
 #------------------------------------------------------------------------------#
 
 ymax <- .35
@@ -269,11 +270,11 @@ ggsave(
 )
 
 #------------------------------------------------------------------------------#
-# WU-CARROLL MODEL (LONGITUDINAL GROWTH) ----
+# SHARED PARAMETER MODEL ----
 #------------------------------------------------------------------------------#
 
-# wu-carroll model using full latent variable
-growth_i_wcl <- rblimp(
+# wu-carroll model ----
+growth_i_wc <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   # transform = 'm = ismissing(y)',
@@ -300,9 +301,39 @@ growth_i_wcl <- rblimp(
   iter = 20000)
 
 # print output
-output(growth_i_wcl)
+output(growth_i_wc)
 
-# residual wu-carroll model
+# quadratic wu-carroll model ----
+growth_i_wcq <- rblimp(
+  data = growth_i,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  # timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    m ~ intercept group alpha alpha^2 beta beta^2 | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
+
+# print output
+output(growth_i_wcq)
+
+# residualized wu-carroll model ----
 growth_i_wcr <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -335,11 +366,11 @@ growth_i_wcr <- rblimp(
 output(growth_i_wcr)
 
 #------------------------------------------------------------------------------#
-# DIGGLE-KENWARD MODEL (LONGITUDINAL GROWTH) ----
+# SELECTION MODEL ----
 #------------------------------------------------------------------------------#
 
-# diggle-kenward model
-growth_i_dky <- rblimp(
+# diggle-kenward model ----
+growth_i_dk <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
@@ -355,7 +386,6 @@ growth_i_dky <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time > 0, 1, 0);
     m ~ intercept group y y.lag | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
@@ -366,10 +396,10 @@ growth_i_dky <- rblimp(
   iter = 20000)
 
 # print output
-output(growth_i_dky)
+output(growth_i_dk)
 
-# diggle-kenward model
-growth_i_dkr <- rblimp(
+# quadratic diggle-kenward model ----
+growth_i_dkq <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
@@ -385,26 +415,54 @@ growth_i_dkr <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time > 0, 1, 0);
-    yhat = alpha + beta*time;
-    ylaghat = alpha + beta*(time - 1);
-    m ~ intercept group (y - yhat) (y.lag - ylaghat) | intercept;
+    m ~ intercept group y y^2 y.lag | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 50000,
-  iter = 50000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
-output(growth_i_dkr)
+output(growth_i_dkq)
+
+# detrended diggle-kenward model ----
+growth_i_dkd <- rblimp(
+  data = growth_i,
+  clusterid = 'l2id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'l2id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    yw = y - (alpha + beta*time);
+    lagyw = y.lag - (alpha + beta*(time - 1));
+    m ~ intercept group yw lagyw | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+  seed = 90291,
+  burn = 200000,
+  iter = 200000)
+
+# print output
+output(growth_i_dkd)
 
 #------------------------------------------------------------------------------#
-# DISAGGREGATED MODEL (LONGITUDINAL GROWTH) ----
+# DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-# diggle-kenward model
+# disaggregated model ----
 growth_i_dis <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -421,25 +479,113 @@ growth_i_dis <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    alpha_res = alpha - (g0a + g1a*group);
-    beta_res = beta - (g0b + g1b*group);
-    d = ifelse(time > 0, 1, 0);
-    yhat = alpha + beta*time;
-    ylaghat = alpha + beta*(time - 1);
-    m ~ intercept group alpha_res beta_res (y - yhat) (y.lag - ylaghat) | intercept;
+    yw = y - (alpha + beta*time);
+    lagyw = y.lag - (alpha + beta*(time - 1));
+    m ~ intercept group yw lagyw alpha beta | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 50000,
-  iter = 50000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(growth_i_dis)
 
 #------------------------------------------------------------------------------#
-# PLOT GROWTH CURVES (LONGITUDINAL GROWTH) ----
+# EXTRACT ESTIMATES ----
+#------------------------------------------------------------------------------#
+
+extract_growth_params <- function(object, method) {
+  
+  tab <- object@estimates
+  
+  rows <- c(
+    "alpha ~ Intercept",
+    "beta ~ Intercept",
+    "alpha ~ group",
+    "beta ~ group",
+    "alpha residual variance",
+    "beta residual variance",
+    "Cor( alpha, beta )",
+    "y residual variance",
+    "Parameter: diff",
+    "Parameter: d_diff",
+    "m R2: Coefficients"
+  )
+  
+  res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
+  
+  # Rename rows to cleaner presentation labels
+  rownames(res) <- c(
+    "Intercept (G = 0)",
+    "Slope (G = 0)",
+    "Intercept Diff.",
+    "Slope Diff.",
+    "Var(Intercept)",
+    "Var(Slope)",
+    "Cor(Intercept, Slope)",
+    "Var(Residual)",
+    "Mean Diff.",
+    "Std. Mean Diff.",
+    "Pseudo-Rsq"
+  )
+  
+  colnames(res) <- c(
+    paste0("Est_", method),
+    paste0("SD_", method)
+  )
+  
+  res
+}
+
+# com_tab <- extract_growth_d_params(growth_d_com, "COM")
+mar_tab <- extract_growth_params(growth_i_mar, "MAR")
+wc_tab <- extract_growth_params(growth_i_wc, "WC")
+wcq_tab <- extract_growth_params(growth_i_wcq, "WCQ")
+wcr_tab <- extract_growth_params(growth_i_wcr, "WCR")
+dk_tab <- extract_growth_params(growth_i_dk, "DK")
+dkq_tab <- extract_growth_params(growth_i_dkq, "DKQ")
+dkd_tab <- extract_growth_params(growth_i_dkd, "DKD")
+dis_tab <- extract_growth_params(growth_i_dis, "DIS")
+
+tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
+tab_growth_im <- tab
+
+# rearrange for table
+
+# Extract rows
+mean_row   <- tab["Mean Diff.", ]
+std_row    <- tab["Std. Mean Diff.", ]
+pseudo_row <- tab["Pseudo-Rsq", ]
+
+# Get method names
+col_names <- colnames(tab)
+methods <- unique(sub("^(Est|SD)_", "", col_names))
+
+# Build output table
+out <- do.call(rbind, lapply(methods, function(m) {
+  c(
+    Mean_Diff      = mean_row[paste0("Est_", m)],
+    SD_Mean_Diff   = mean_row[paste0("SD_", m)],
+    Std_Mean_Diff  = std_row[paste0("Est_", m)],
+    SD_Std_Mean    = std_row[paste0("SD_", m)],
+    Pseudo_Rsq     = pseudo_row[paste0("Est_", m)]
+  )
+}))
+
+# Final formatting
+rownames(out) <- methods
+out <- as.data.frame(out)
+colnames(out) <- c("Mean Diff", "SD", "Std. Mean Diff", "SD", "Pseudo R²")
+
+out
+
+
+
+#------------------------------------------------------------------------------#
+# PLOT GROWTH CURVES ----
 #------------------------------------------------------------------------------#
 
 p_gro_i_mar <- plot_means(y.predicted ~ time | group,
@@ -487,7 +633,7 @@ p_gro_i_dkr <- plot_means(y.predicted ~ time | group,
 p_gro_i_mar; p_gro_i_dum; p_gro_i_wcl; p_gro_i_wcr; p_gro_i_dky; p_gro_i_dkr
 
 #------------------------------------------------------------------------------#
-# EXTRACT ESTIMATES (LONGITUDINAL GROWTH) ----
+# EXTRACT ESTIMATES ----
 #------------------------------------------------------------------------------#
 
 extract_growth_i_params <- function(object, method) {
@@ -544,7 +690,7 @@ cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab,dis_tab)
 
 
 #------------------------------------------------------------------------------#
-# CURSIO ET AL. MODEL (LONGITUDINAL GROWTH) ----
+# CURSIO ET AL. MODEL ----
 #------------------------------------------------------------------------------#
 
 # cursio_1pl <- rblimp(
