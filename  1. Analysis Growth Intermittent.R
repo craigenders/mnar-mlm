@@ -44,6 +44,9 @@ growth_i_com <- rblimp(
     ycom ~ intercept@alpha time@beta;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    av = alpha.totalvar;
+    yv = ycom.totalvar;
+    sdy = sqrt(ycom.totalvar + alpha.totalvar);
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
   burn = 10000,

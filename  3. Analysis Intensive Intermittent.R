@@ -27,7 +27,7 @@ source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/funct
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
-# COMPLETE DATA (INTENSIVE MEASUREMENTS) ----
+# COMPLETE DATA ----
 #------------------------------------------------------------------------------#
 
 intensive_i_com <- rblimp(
@@ -38,13 +38,18 @@ intensive_i_com <- rblimp(
   center = 'groupmean = xcom',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    omega ~ intercept;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
     ycom ~ intercept@alpha xcom@beta;
     var(ycom) ~ intercept@omega;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -53,7 +58,7 @@ intensive_i_com <- rblimp(
 output(intensive_i_com)
 
 #------------------------------------------------------------------------------#
-# MAR (INTENSIVE MEASUREMENTS) ----
+# CMAR ----
 #------------------------------------------------------------------------------#
 
 intensive_i_mar <- rblimp(
@@ -64,13 +69,18 @@ intensive_i_mar <- rblimp(
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    omega ~ intercept;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 10000,
   iter = 10000)
@@ -79,7 +89,7 @@ intensive_i_mar <- rblimp(
 output(intensive_i_mar)
 
 #------------------------------------------------------------------------------#
-# ICC FOR THE MISSINGNESS INDICATOR (INTENSIVE MEASUREMENTS) ----
+# ICC FOR THE MISSINGNESS INDICATOR ----
 #------------------------------------------------------------------------------#
 
 # fit unconditional model
@@ -99,10 +109,10 @@ icc_intensive_i <- rblimp(
 output(icc_intensive_i)
 
 #------------------------------------------------------------------------------#
-# TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
+# TIME-RELATED CHANGES ----
 #------------------------------------------------------------------------------#
 
-# linear trend
+# linear trend ----
 intensive_i_tlin <- rblimp(
   data = intensive_i,
   clusterid = 'l2id', 
@@ -110,16 +120,18 @@ intensive_i_tlin <- rblimp(
   ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'time group',
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
@@ -129,7 +141,7 @@ intensive_i_tlin <- rblimp(
 # print output
 output(intensive_i_tlin)
 
-# quadratic trend
+# quadratic trend ----
 intensive_i_tquad <- rblimp(
   data = intensive_i,
   clusterid = 'l2id', 
@@ -137,16 +149,18 @@ intensive_i_tquad <- rblimp(
   ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'time group',
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
@@ -156,7 +170,7 @@ intensive_i_tquad <- rblimp(
 # print output
 output(intensive_i_tquad)
 
-# dummy coded time
+# dummy-coded time ----
 intensive_i_tdum <- rblimp(
   data = intensive_i,
   clusterid = 'l2id', 
@@ -164,57 +178,30 @@ intensive_i_tdum <- rblimp(
   ordinal = 'm',
   # timeid = 'time',
   # dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'time group',
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
     m ~ intercept group | intercept;
-    { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   waldtest = '
     m ~ intercept group | intercept;
-    { t in 1:24 } : m ~ (time == [t]);',
+    { t in 1:19 } : m ~ (time == [t]);',
   seed = 90291,
   burn = 10000,
   iter = 10000)
 
 # print output
 output(intensive_i_tdum)
-
-# dummy coded time
-intensive_i_tdumr <- rblimp(
-  data = intensive_i,
-  clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta',
-  fixed = 'time group',
-  center = 'groupmean = x',
-  model = '
-    level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
-    level1:
-    y ~ intercept@alpha x@beta;
-    missingness:
-    m ~ intercept group | intercept;
-    { t in 1:24 } : m ~ (time == [t]);',
-  seed = 90291,
-  burn = 10000,
-  iter = 10000)
-
-# print output
-output(intensive_i_tdumr)
-
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
@@ -223,26 +210,11 @@ output(intensive_i_tdumr)
 ymax <- .35
 ymin <- 0
 
-# int_i_obs <- plot_means(m ~ time | group, 
-#                       model = intensive_i_tdum,
-#                       ylab = "Probability",
-#                       title = "A. Observed Probabilities (Growth Data)",
-#                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21)
-
 int_i_obs <- plot_means(m ~ time | group, 
                          model = intensive_i_tdum,
                          ylab = "Probability",
                          title = "B. Observed Probabilities",
                          group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
-  geom_line(linewidth = .25)
-
-int_i_dumr <- plot_means(m.1.probability ~ time | group,
-                      model = intensive_i_tdumr,
-                      ylab = "Probability",
-                      title = "Dummy Coded Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21) +
   theme(legend.position = "top",legend.justification = "center") +
   scale_linetype_manual(values = c("dotted", "solid")) +
   geom_line(linewidth = .25)
@@ -280,28 +252,25 @@ int_i_obs; int_i_dum; int_i_lin; int_i_quad
 pmiss_intensive_i_obs <- aggregate(m ~ time + group, data = intensive_i_tdum@average_imp, mean)
 pmiss_intensive_i_tlin <- aggregate(m.1.probability ~ time + group, data = intensive_i_tlin@average_imp, mean)
 pmiss_intensive_i_tquad <- aggregate(m.1.probability ~ time + group, data = intensive_i_tquad@average_imp, mean)
-pmiss_intensive_i_tdumr <- aggregate(m.1.probability ~ time + group, data = intensive_i_tdumr@average_imp, mean)
 pmiss_intensive_i_tdum <- aggregate(m.1.probability ~ time + group, data = intensive_i_tdum@average_imp, mean)
-
 
 # compute rmse of marginal vs. observed probabilities
 rmse_int_i_tlin <- sqrt(mean((pmiss_intensive_i_tlin$m.1.probability - pmiss_intensive_i_obs$m)^2))
 rmse_int_i_tquad <- sqrt(mean((pmiss_intensive_i_tquad$m.1.probability - pmiss_intensive_i_obs$m)^2))
-rmse_int_i_tdumr <- sqrt(mean((pmiss_intensive_i_tdumr$m.1.probability - pmiss_intensive_i_obs$m)^2))
 rmse_int_i_tdum <- sqrt(mean((pmiss_intensive_i_tdum$m.1.probability - pmiss_intensive_i_obs$m)^2))
-rmse_int_i_tlin; rmse_int_i_tquad; rmse_int_i_tdumr; rmse_int_i_tdum
+rmse_int_i_tlin; rmse_int_i_tquad; rmse_int_i_tdum
 
 # summarize difference between marginal vs. observed probabilities
 summary(pmiss_intensive_i_tlin$m.1.probability - pmiss_intensive_i_obs$m)
 summary(pmiss_intensive_i_tquad$m.1.probability - pmiss_intensive_i_obs$m)
-summary(pmiss_intensive_i_tdumr$m.1.probability - pmiss_intensive_i_obs$m)
 summary(pmiss_intensive_i_tdum$m.1.probability - pmiss_intensive_i_obs$m)
 
 #------------------------------------------------------------------------------#
-# WU-CARROLL (INTENSIVE MEASUREMENTS) ----
+# SHARED PARAMETER ----
 #------------------------------------------------------------------------------#
 
-intensive_i_wcl <- rblimp(
+# shared parameter model ----
+intensive_i_wc <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
   # transform = 'm = ismissing(y)',
@@ -322,14 +291,55 @@ intensive_i_wcl <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     m ~ intercept group alpha omega | intercept;
-    { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
-output(intensive_i_wcl)
+output(intensive_i_wc)
 
+# quadratic shared parameter model ----
+intensive_i_wcq <- rblimp(
+  data = intensive_i,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group alpha alpha^2 omega omega^2 | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
+
+# print output
+output(intensive_i_wcq)
+
+# residualized shared parameter model ----
 intensive_i_wcr <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -351,16 +361,16 @@ intensive_i_wcr <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     alpha_res = alpha - (g0a + g1a*group);
-    omega_res = omega - g0o;
-    m ~ intercept group alpha_res omega_res | intercept;
-    { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
+    m ~ intercept group alpha_res omega | intercept;
+    { t in 1:29 } : m ~ (time == [t]) (time == [t])*group;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
-output(intensive_i_wcx)
+output(intensive_i_wcr)
 
+# shared parameter model with x latent means ----
 intensive_i_wcx <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -381,13 +391,11 @@ intensive_i_wcx <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    alpha_res = alpha - (g0a + g1a*group);
-    omega_res = omega - g0o;
-    m ~ intercept group alpha_res omega_res x.mean | intercept;
-    { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
+    m ~ intercept group alpha omega x.mean | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_i_wcx)
@@ -514,7 +522,7 @@ cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab,dis_tab)
 
 
 #------------------------------------------------------------------------------#
-# FIGURE 3 ----
+# FIGURE 3 OLD ----
 #------------------------------------------------------------------------------#
 
 figure3 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
@@ -545,8 +553,8 @@ ggsave(
 #   fixed = 'occasion group time',
 #   model = '
 #     level2:
-#     alpha ~ intercept group;
-#     beta ~ intercept group;
+#     alpha ~ intercept@g0a group@g1a;
+#     beta ~ intercept@g0b group@g1b;
 #     alpha ~~ beta;
 #     level1:
 #     y ~ intercept@alpha time@beta;
@@ -574,8 +582,8 @@ ggsave(
 #   fixed = 'time occasion group',
 #   model = '
 #     level2:
-#     alpha ~ intercept group;
-#     beta ~ intercept group;
+#     alpha ~ intercept@g0a group@g1a;
+#     beta ~ intercept@g0b group@g1b;
 #     alpha ~~ beta;
 #     level1:
 #     y ~ intercept@alpha time@beta;
