@@ -75,15 +75,16 @@ intensive_i_mar <- rblimp(
     alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
-    var(y) ~ intercept@omega;',
+    var(y) ~ intercept@omega;
+    m ~ intercept;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_i_mar)
@@ -362,7 +363,12 @@ intensive_i_wcr <- rblimp(
     missingness:
     alpha_res = alpha - (g0a + g1a*group);
     m ~ intercept group alpha_res omega | intercept;
-    { t in 1:29 } : m ~ (time == [t]) (time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 20000,
   iter = 20000)
@@ -393,6 +399,11 @@ intensive_i_wcx <- rblimp(
     missingness:
     m ~ intercept group alpha omega x.mean | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 20000,
   iter = 20000)
@@ -401,11 +412,11 @@ intensive_i_wcx <- rblimp(
 output(intensive_i_wcx)
 
 #------------------------------------------------------------------------------#
-# DIGGLE-KENWARD MODEL (INTENSIVE MEASUREMENTS) ----
+# DIGGLE-KENWARD MODEL ----
 #------------------------------------------------------------------------------#
 
-# diggle-kenward model
-intensive_i_dky <- rblimp(
+# diggle-kenward model ----
+intensive_i_dk <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
   # transform = 'm = ismissing(y)',
@@ -426,15 +437,92 @@ intensive_i_dky <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     m ~ intercept group y y.lag | intercept;
-    { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 20000,
   iter = 20000)
 
 # print output
-output(intensive_i_dky)
+output(intensive_i_dk)
 
-# residual diggle-kenward model
+# quadratic diggle-kenward model ----
+intensive_i_dkq <- rblimp(
+  data = intensive_i,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group y y^2 y.lag | intercept;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(intensive_i_dkq)
+
+# diggle-kenward model with x ----
+intensive_i_dkx <- rblimp(
+  data = intensive_i,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega xmean',
+  fixed = 'group time',
+  # center = 'groupmean = x',
+  model = '
+    level2:
+    xmean ~ intercept;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    x ~ intercept@xmean;
+    y ~ intercept@alpha (x - xmean)@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group y y.lag x x.lag | intercept;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 40000,
+  iter = 40000)
+
+# print output
+output(intensive_i_dkx)
+
+# residual diggle-kenward model ----
 intensive_i_dkr <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -456,7 +544,12 @@ intensive_i_dkr <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     m ~ intercept group (y - alpha) (y.lag - alpha) | intercept;
-    { t in 1:24 } : m ~ (time == [t]) (time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 75000,
   iter = 75000)
@@ -465,10 +558,49 @@ intensive_i_dkr <- rblimp(
 output(intensive_i_dkr)
 
 #------------------------------------------------------------------------------#
-# EXTRACT ESTIMATES (LONGITUDINAL GROWTH) ----
+# DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-extract_growth_params <- function(object, method) {
+# disaggregated model ----
+intensive_i_dis <- rblimp(
+  data = intensive_i,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group (y - alpha) (y.lag - alpha) alpha omega | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(intensive_i_dis)
+
+#------------------------------------------------------------------------------#
+# EXTRACT ESTIMATES ----
+#------------------------------------------------------------------------------#
+
+extract_int_params <- function(object, method) {
   
   tab <- object@estimates
   
@@ -480,8 +612,16 @@ extract_growth_params <- function(object, method) {
     "alpha residual variance",
     "beta residual variance",
     "Cor( alpha, beta )",
-    "y residual variance",
-    "Parameter: diff"
+    "y Variance Q50%",
+    "omega ~ Intercept",
+    "omega residual variance",
+    "Cor( alpha, omega )",
+    "Cor( beta, omega )",
+    "Parameter: adiff",
+    "Parameter: d_adiff",
+    "Parameter: bdiff",
+    "Parameter: d_bdiff",
+    "m R2: Coefficients"
   )
   
   res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
@@ -496,7 +636,15 @@ extract_growth_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Intercept, Slope)",
     "Var(Residual)",
-    "Endpoint Mean Diff."
+    "Intercept Log-Var",  
+    "Var(Log-Var)",
+    "Cor(Intercept, Log-Var)",
+    "Cor(Log-Var, Slope)",
+    "Mean Diff.",
+    "Std. Mean Diff.",
+    "Slope Diff.",
+    "Std. Slope Diff.",
+    "Pseudo-Rsq"
   )
   
   colnames(res) <- c(
@@ -507,18 +655,53 @@ extract_growth_params <- function(object, method) {
   res
 }
 
-com_tab <- extract_growth_params(growth_com, "COM")
-mar_tab <- extract_growth_params(growth_mar, "MAR")
-dum_tab <- extract_growth_params(growth_tdum, "DUM")
-wcl_tab <- extract_growth_params(growth_wcl, "WCL")
-wcr_tab <- extract_growth_params(growth_wcr, "WCR")
-dky_tab <- extract_growth_params(growth_dky, "DKL")
-dkr_tab <- extract_growth_params(growth_dkr, "DKR")
-dis_tab <- extract_growth_params(growth_dis, "DIS")
+# com_tab <- extract_growth_d_params(growth_d_com, "COM")
+mar_tab <- extract_int_params(intensive_i_mar, "MAR")
+wc_tab <- extract_int_params(intensive_i_wc, "WC")
+wcq_tab <- extract_int_params(intensive_i_wcq, "WCQ")
+wcr_tab <- extract_int_params(intensive_i_wcr, "WCR")
+wcx_tab <- extract_int_params(intensive_i_wcx, "WCX")
+dk_tab <- extract_int_params(intensive_i_dk, "DK")
+dkq_tab <- extract_int_params(intensive_i_dkq, "DKQ")
+dkx_tab <- extract_int_params(intensive_i_dkq, "DKX")
+dkr_tab <- extract_int_params(intensive_i_dkr, "DKR")
+dis_tab <- extract_int_params(intensive_i_dis, "DIS")
 
-cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab,dis_tab)
+tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,wcx_tab,dk_tab,dkq_tab,dkr_tab,dis_tab)
+tab_intensive_im <- tab
+write.csv(tab_intensive_im,file = '~/desktop/tab_intensive_im.csv')
 
+# rearrange for table
 
+# Extract rows
+tab <- tab_intensive_im
+# mean_row   <- tab["Mean Diff.", ]
+# std_row    <- tab["Std. Mean Diff.", ]
+mean_row   <- tab["Slope Diff.", ]
+std_row    <- tab["Std. Slope Diff.", ]
+pseudo_row <- tab["Pseudo-Rsq", ]
+
+# Get method names
+col_names <- colnames(tab)
+methods <- unique(sub("^(Est|SD)_", "", col_names))
+
+# Build output table
+out <- do.call(rbind, lapply(methods, function(m) {
+  c(
+    Mean_Diff      = mean_row[paste0("Est_", m)],
+    SD_Mean_Diff   = mean_row[paste0("SD_", m)],
+    Std_Mean_Diff  = std_row[paste0("Est_", m)],
+    SD_Std_Mean    = std_row[paste0("SD_", m)],
+    Pseudo_Rsq     = pseudo_row[paste0("Est_", m)]
+  )
+}))
+
+# Final formatting
+rownames(out) <- methods
+out <- as.data.frame(out)
+colnames(out) <- c("Diff", "SD", "Std. Diff", "SD", "Pseudo R²")
+
+out
 
 
 #------------------------------------------------------------------------------#

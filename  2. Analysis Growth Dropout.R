@@ -546,6 +546,10 @@ dis_tab <- extract_growth_params(growth_d_dis, "DIS")
 
 tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
 
+tab_growth_do <- tab
+
+write.csv(tab_growth_do,file = '~/desktop/tab_growth_do.csv')
+
 
 # rearrange for table
 

@@ -31,7 +31,7 @@ source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/funct
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
-# COMPLETE DATA (INTENSIVE MEASUREMENTS) ----
+# COMPLETE DATA ----
 #------------------------------------------------------------------------------#
 
 intensive_d_mar <- rblimp(
@@ -55,7 +55,7 @@ intensive_d_mar <- rblimp(
 output(intensive_d_mar)
 
 #------------------------------------------------------------------------------#
-# MAR (INTENSIVE MEASUREMENTS) ----
+# CMAR ----
 #------------------------------------------------------------------------------#
 
 intensive_d_mar <- rblimp(
@@ -70,10 +70,11 @@ intensive_d_mar <- rblimp(
     beta ~ intercept group;
     alpha ~~ beta;
     level1:
-    y ~ intercept@alpha x@beta;',
+    y ~ intercept@alpha x@beta;
+    m ~ intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_d_mar)
@@ -82,7 +83,7 @@ output(intensive_d_mar)
 # TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
-# linear trend
+# linear trend ----
 intensive_d_tlin <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
@@ -95,13 +96,15 @@ intensive_d_tlin <- rblimp(
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time > 4, 1, 0);
+    d = ifelse(time < 5, 0, 1);
     m ~ intercept@-3 d d*group d*(time - 5) d*(time - 5)*group | intercept@0;',
   seed = 90291,
   burn = 10000,
@@ -111,7 +114,7 @@ intensive_d_tlin <- rblimp(
 # print output
 output(intensive_d_tlin)
 
-# quadratic trend
+# quadratic trend ----
 intensive_d_tquad <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
@@ -124,13 +127,15 @@ intensive_d_tquad <- rblimp(
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time > 4, 1, 0);
+    d = ifelse(time < 5, 0, 1);
     m ~ intercept@-3 d d*group d*(time - 5) d*(time - 5)^2 d*(time - 5)*group d*(time - 5)^2*group | intercept@0;',
   seed = 90291,
   burn = 10000,
@@ -140,7 +145,7 @@ intensive_d_tquad <- rblimp(
 # print output
 output(intensive_d_tquad)
 
-# dummy coded time
+# dummy-coded time ----
 intensive_d_tdum <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
@@ -152,13 +157,15 @@ intensive_d_tdum <- rblimp(
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time > 4, 1, 0);
+    d = ifelse(time < 5, 0, 1);
     m ~ intercept@-3 | intercept@0;
     { t in 1:24 } : m ~ d*(time == [t]) d*(time == [t])*group;',
   seed = 90291,
@@ -235,34 +242,111 @@ summary(pmiss_intensive_d_tlin$m.1.probability - pmiss_intensive_d_obs$m)
 summary(pmiss_intensive_d_tquad$m.1.probability - pmiss_intensive_d_obs$m)
 
 #------------------------------------------------------------------------------#
-# WU-CARROLL (INTENSIVE MEASUREMENTS) ----
+# SHARED PARAMETER ----
 #------------------------------------------------------------------------------#
 
-# residual wu-carroll
-intensive_d_wcr <- rblimp(
+# shared parameter model ----
+intensive_d_wc <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
-  # timeid = 'time',
-  # dropout = 'm = y (binary)',
+  # transform = 'm = ismissing(y)',
   ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ 1@g0a group@g1a;
-    beta ~ 1@g0b group@g1b;
-    omega ~ 1;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ 1@alpha x@beta;
-    var(y) ~ 1@omega;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*alpha d*omega | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
+
+# print output
+output(intensive_d_wc)
+
+# quadratic shared parameter model ----
+intensive_d_wcq <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*alpha d*alpha^2 d*omega d*omega^2 | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
+
+# print output
+output(intensive_d_wcq)
+
+# residualized shared parameter model ----
+intensive_d_wcr <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
     alpha_res = alpha - (g0a + g1a*group);
-    beta_res = beta - (g0b + g1b*group);
-    d = ifelse(time > 4, 1, 0);
-    m ~ intercept@-3 d*alpha_res d*beta_res | intercept@0;
-    { t in 1:24 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    m ~ intercept@-3 d*group d*alpha_res d*omega | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 20000,
   iter = 20000)
@@ -270,80 +354,237 @@ intensive_d_wcr <- rblimp(
 # print output
 output(intensive_d_wcr)
 
-# wu-carroll
-intensive_d_wcl <- rblimp(
+# shared parameter model with x latent means ----
+intensive_d_wcx <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
-  # timeid = 'time',
-  # dropout = 'm = y (binary)',
+  # transform = 'm = ismissing(y)',
   ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ 1@g0a group@g1a;
-    beta ~ 1@g0b group@g1b;
-    omega ~ 1;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ 1@alpha x@beta;
-    var(y) ~ 1@omega;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time > 4, 1, 0);
-    m ~ intercept@-3 d*alpha d*beta | intercept@0;
-    { t in 1:24 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*alpha d*omega d*x.mean | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   burn = 20000,
   iter = 20000)
 
 # print output
-output(intensive_d_wcl)
-
-
-#------------------------------------------------------------------------------#
-# FIGURE 5 ----
-#------------------------------------------------------------------------------#
-
-figure5 <- gro_obs / int_d_obs
-
-ggsave(
-  filename = "~/desktop/Figure 5. Obs Missingness.pdf",
-  plot = figure5,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
+output(intensive_d_wcx)
 
 #------------------------------------------------------------------------------#
-# FIGURE 6 AND 7 ----
+# DIGGLE-KENWARD MODEL ----
 #------------------------------------------------------------------------------#
 
-figure6 <- gro_obs_f3 / gro_lin / gro_quad / gro_dum
-figure7 <- int_d_obs_f4 / int_d_lin / int_d_quad / int_d_dum
+# diggle-kenward model ----
+intensive_d_dk <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*y d*y.lag | intercept@0;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
 
-ggsave(
-  filename = "~/desktop/Figure 6. Time Related (Growth).pdf",
-  plot = figure6,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
+# print output
+output(intensive_d_dk)
 
-ggsave(
-  filename = "~/desktop/Figure 7. Time Related (Intermittent).pdf",
-  plot = figure7,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
+# quadratic diggle-kenward model ----
+intensive_d_dkq <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*y d*y^2 d*y.lag | intercept@0;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
 
+# print output
+output(intensive_d_dkq)
+
+# diggle-kenward model with x ----
+intensive_d_dkx <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega xmean',
+  fixed = 'group time',
+  # center = 'groupmean = x',
+  model = '
+    level2:
+    xmean ~ intercept;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    x ~ intercept@xmean;
+    y ~ intercept@alpha (x - xmean)@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*y d*y.lag d*x d*x.lag | intercept@0;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 40000,
+  iter = 40000)
+
+# print output
+output(intensive_d_dkx)
+
+# residual diggle-kenward model ----
+intensive_d_dkr <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*(y - alpha) d*(y.lag - alpha) | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 75000,
+  iter = 75000)
+
+# print output
+output(intensive_d_dkr)
 
 #------------------------------------------------------------------------------#
-# EXTRACT ESTIMATES (LONGITUDINAL GROWTH) ----
+# DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-extract_growth_params <- function(object, method) {
+# disaggregated model ----
+intensive_d_dis <- rblimp(
+  data = intensive_d,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 5, 0, 1);
+    m ~ intercept@-3 d*group d*(y - alpha) d*(y.lag - alpha) d*alpha d*omega | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(intensive_d_dis)
+
+#------------------------------------------------------------------------------#
+# EXTRACT ESTIMATES ----
+#------------------------------------------------------------------------------#
+
+extract_int_params <- function(object, method) {
   
   tab <- object@estimates
   
@@ -355,8 +596,16 @@ extract_growth_params <- function(object, method) {
     "alpha residual variance",
     "beta residual variance",
     "Cor( alpha, beta )",
-    "y residual variance",
-    "Parameter: diff"
+    "y Variance Q50%",
+    "omega ~ Intercept",
+    "omega residual variance",
+    "Cor( alpha, omega )",
+    "Cor( beta, omega )",
+    "Parameter: adiff",
+    "Parameter: d_adiff",
+    "Parameter: bdiff",
+    "Parameter: d_bdiff",
+    "m R2: Coefficients"
   )
   
   res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
@@ -371,7 +620,15 @@ extract_growth_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Intercept, Slope)",
     "Var(Residual)",
-    "Endpoint Mean Diff."
+    "Intercept Log-Var",  
+    "Var(Log-Var)",
+    "Cor(Intercept, Log-Var)",
+    "Cor(Log-Var, Slope)",
+    "Mean Diff.",
+    "Std. Mean Diff.",
+    "Slope Diff.",
+    "Std. Slope Diff.",
+    "Pseudo-Rsq"
   )
   
   colnames(res) <- c(
@@ -382,15 +639,46 @@ extract_growth_params <- function(object, method) {
   res
 }
 
-com_tab <- extract_growth_params(growth_com, "COM")
-mar_tab <- extract_growth_params(growth_mar, "MAR")
-dum_tab <- extract_growth_params(growth_tdum, "DUM")
-wcl_tab <- extract_growth_params(growth_wcl, "WCL")
-wcr_tab <- extract_growth_params(growth_wcr, "WCR")
-dky_tab <- extract_growth_params(growth_dky, "DKL")
-dkr_tab <- extract_growth_params(growth_dkr, "DKR")
+# com_tab <- extract_growth_d_params(growth_d_com, "COM")
+mar_tab <- extract_int_params(intensive_d_mar, "MAR")
+wc_tab <- extract_int_params(intensive_d_wc, "WC")
+wcq_tab <- extract_int_params(intensive_d_wcq, "WCQ")
+wcr_tab <- extract_int_params(intensive_d_wcr, "WCR")
+wcx_tab <- extract_int_params(intensive_d_wcx, "WCX")
+dk_tab <- extract_int_params(intensive_d_dk, "DK")
+dkq_tab <- extract_int_params(intensive_d_dkq, "DKQ")
+dkx_tab <- extract_int_params(intensive_d_dkq, "DKX")
+dkr_tab <- extract_int_params(intensive_d_dkr, "DKR")
+dis_tab <- extract_int_params(intensive_d_dis, "DIS")
 
-cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab)
+tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
+tab_growth_im <- tab
 
-#
+# rearrange for table
 
+# Extract rows
+mean_row   <- tab["Mean Diff.", ]
+std_row    <- tab["Std. Mean Diff.", ]
+pseudo_row <- tab["Pseudo-Rsq", ]
+
+# Get method names
+col_names <- colnames(tab)
+methods <- unique(sub("^(Est|SD)_", "", col_names))
+
+# Build output table
+out <- do.call(rbind, lapply(methods, function(m) {
+  c(
+    Mean_Diff      = mean_row[paste0("Est_", m)],
+    SD_Mean_Diff   = mean_row[paste0("SD_", m)],
+    Std_Mean_Diff  = std_row[paste0("Est_", m)],
+    SD_Std_Mean    = std_row[paste0("SD_", m)],
+    Pseudo_Rsq     = pseudo_row[paste0("Est_", m)]
+  )
+}))
+
+# Final formatting
+rownames(out) <- methods
+out <- as.data.frame(out)
+colnames(out) <- c("Mean Diff", "SD", "Std. Mean Diff", "SD", "Pseudo R²")
+
+out
