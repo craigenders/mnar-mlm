@@ -59,6 +59,7 @@ output(growth_i_com)
 # CMAR ----
 #------------------------------------------------------------------------------#
 
+# Model 1: CMAR ----
 growth_i_mar <- rblimp(
   data = growth_i,
   clusterid = 'l2id', 
@@ -207,7 +208,7 @@ gro_i_obs <- plot_means(m ~ time | group,
                       title = "A. Observed Probabilities",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
                       theme(legend.position = "top",legend.justification = "center") +
-                      scale_linetype_manual(values = c("dotted", "solid")) +
+                      scale_linetype_manual(values = c("dashed", "solid")) +
                       geom_line(linewidth = .25)
 
 gro_i_dum <- plot_means(m.1.probability ~ time | group, 
@@ -216,7 +217,7 @@ gro_i_dum <- plot_means(m.1.probability ~ time | group,
            title = "G. Dummy Coded Time",
            group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_i_lin <- plot_means(m.1.probability ~ time | group, 
@@ -225,7 +226,7 @@ gro_i_lin <- plot_means(m.1.probability ~ time | group,
                       title = "C. Linear Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_i_quad <- plot_means(m.1.probability ~ time | group, 
@@ -234,7 +235,7 @@ gro_i_quad <- plot_means(m.1.probability ~ time | group,
                       title = "E. Quadratic Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_i_obs; gro_i_dum; gro_i_lin; gro_i_quad
@@ -257,16 +258,16 @@ summary(pmiss_growth_i_tlin$m.1.probability - pmiss_growth_i_obs$m)
 summary(pmiss_growth_i_tquad$m.1.probability - pmiss_growth_i_obs$m)
 
 #------------------------------------------------------------------------------#
-# FIGURE 2 ----
+# FIGURE 3 ----
 #------------------------------------------------------------------------------#
 
-fig2col1 <- gro_i_obs / gro_i_lin / gro_i_quad / gro_i_dum
-fig2col2 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
-figure2 <- fig2col1 | fig2col2
+fig3col1 <- gro_i_obs / gro_i_lin / gro_i_quad / gro_i_dum
+fig3col2 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
+figure3 <- fig3col1 | fig3col2
 
 ggsave(
-  filename = "~/desktop/Figure 2. Time Related (IM).pdf",
-  plot = figure2,
+  filename = "~/desktop/Figure 3. Time Related (IM).pdf",
+  plot = figure3,
   width = 8.5,
   height = 11,
   units = "in"
@@ -276,7 +277,7 @@ ggsave(
 # SHARED PARAMETER MODEL ----
 #------------------------------------------------------------------------------#
 
-# wu-carroll model ----
+# Model 2: Shared Parameter Model ----
 growth_i_wc <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -306,7 +307,7 @@ growth_i_wc <- rblimp(
 # print output
 output(growth_i_wc)
 
-# quadratic wu-carroll model ----
+# Model 3: Quadratic Shared Parameter Model ----
 growth_i_wcq <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -336,7 +337,7 @@ growth_i_wcq <- rblimp(
 # print output
 output(growth_i_wcq)
 
-# residualized wu-carroll model ----
+# Model 4: Residualized Shared Parameter Model ----
 growth_i_wcr <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -372,7 +373,7 @@ output(growth_i_wcr)
 # SELECTION MODEL ----
 #------------------------------------------------------------------------------#
 
-# diggle-kenward model ----
+# Model 5: Diggle-Kenward Model ----
 growth_i_dk <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -401,7 +402,37 @@ growth_i_dk <- rblimp(
 # print output
 output(growth_i_dk)
 
-# quadratic diggle-kenward model ----
+# Model 5: Diggle-Kenward Model Prior Removed (Dummy Switch) ----
+growth_i_dk_noprior <- rblimp(
+  data = growth_i,
+  clusterid = 'l2id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'l2id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    y_lag = ifelse(time == 0, 0, y.lag);
+    m ~ intercept group y y_lag | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
+
+# print output
+output(growth_i_dk_noprior)
+
+# Model 6: Quadratic Diggle-Kenward Model ----
 growth_i_dkq <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -430,7 +461,7 @@ growth_i_dkq <- rblimp(
 # print output
 output(growth_i_dkq)
 
-# detrended diggle-kenward model ----
+# Model 7: Residual Diggle-Kenward Model ----
 growth_i_dkd <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -462,10 +493,47 @@ growth_i_dkd <- rblimp(
 output(growth_i_dkd)
 
 #------------------------------------------------------------------------------#
+# PLOT DK PROBABILITIES ----
+#------------------------------------------------------------------------------#
+
+ymin = 0
+ymax = .25
+
+gro_i_obs <- plot_means(m ~ time | group, 
+                        model = growth_i_tdum,
+                        ylab = "Probability",
+                        title = "A. Observed Probabilities",
+                        group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  geom_line(linewidth = .25)
+
+gro_i_dk <- plot_means(m.1.probability ~ time | group, 
+                               model = growth_i_dk,
+                               ylab = "Probability",
+                               title = "B. Default Prior",
+                               group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  geom_line(linewidth = .25)
+
+gro_i_dk_noprior <- plot_means(m.1.probability ~ time | group, 
+                        model = growth_i_dk_noprior,
+                        ylab = "Probability",
+                        title = "C. Prior Removed",
+                        group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+  theme(legend.position = "top",legend.justification = "center") +
+  scale_linetype_manual(values = c("dashed", "solid")) +
+  geom_line(linewidth = .25)
+
+fig_dk_probs <- gro_i_obs / gro_i_dk / gro_i_dk_noprior
+fig_dk_probs
+
+#------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-# disaggregated model ----
+# Model 8: Disaggregated Model ----
 growth_i_dis <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
@@ -590,15 +658,47 @@ out
 
 
 #------------------------------------------------------------------------------#
-# PLOT GROWTH CURVES ----
+# PLOT REGRESSION LINES ----
+#------------------------------------------------------------------------------#
+
+means_gro_i_mar <- plot_means(y.predicted ~ time | group,
+                        model = growth_i_mar,
+                        ylab = "Y",
+                        title = "A. Group-Specifc Trajectories (Growth Data)",
+                        group_labels = c("0" = "0", "1" = "1"),
+                        use_latent_growth = TRUE) + ylim(0, 7)
+
+means_int_i_mar <- plot_means(y.predicted ~ xcent | group,
+                          model = intensive_i_mar,
+                          ylab = "Y",
+                          title = "B. Group-Specifc Regressions (Intensive Data)",
+                          group_labels = c("0" = "0", "1" = "1"),
+                          use_latent_growth = T) + ylim(3, 5)
+
+#------------------------------------------------------------------------------#
+# FIGURE 1 ----
+#------------------------------------------------------------------------------#
+
+figure1 <- means_gro_i_mar / means_int_i_mar
+
+ggsave(
+  filename = "~/desktop/Figure 1. CMAR.pdf",
+  plot = figure1,
+  width = 8.5,
+  height = 11,
+  units = "in"
+)
+
+#------------------------------------------------------------------------------#
+# PLOT GROWTH CURVES OLD ----
 #------------------------------------------------------------------------------#
 
 p_gro_i_mar <- plot_means(y.predicted ~ time | group,
-                        model = growth_i_mar,
-                        ylab = "Y",
-                        title = "MAR Model-Implied Means (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
+                          model = growth_i_mar,
+                          ylab = "Y",
+                          title = "A. Group-Specifc Trajectories (Growth Data)",
+                          group_labels = c("0" = "0", "1" = "1"),
+                          use_latent_growth = TRUE) + ylim(0, 7)
 
 p_gro_i_dum <- plot_means(y.predicted ~ time | group, 
                         model = growth_i_tdum,

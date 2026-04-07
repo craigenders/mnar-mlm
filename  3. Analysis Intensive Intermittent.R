@@ -61,12 +61,13 @@ output(intensive_i_com)
 # CMAR ----
 #------------------------------------------------------------------------------#
 
+# Model 1: CMAR ----
 intensive_i_mar <- rblimp(
   data = intensive_i,
   clusterid = 'l2id', 
   latent = 'l2id = alpha beta omega',
   fixed = 'group',
-  center = 'groupmean = x',
+  # center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
@@ -74,7 +75,8 @@ intensive_i_mar <- rblimp(
     omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha x@beta;
+    xcent = x - x.mean;
+    y ~ intercept@alpha xcent@beta;
     var(y) ~ intercept@omega;
     m ~ intercept;',
   parameters = '
@@ -217,7 +219,7 @@ int_i_obs <- plot_means(m ~ time | group,
                          title = "B. Observed Probabilities",
                          group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 int_i_dum <- plot_means(m.1.probability ~ time | group, 
@@ -226,7 +228,7 @@ int_i_dum <- plot_means(m.1.probability ~ time | group,
                       title = "H. Dummy Coded Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 int_i_lin <- plot_means(m.1.probability ~ time | group, 
@@ -235,7 +237,7 @@ int_i_lin <- plot_means(m.1.probability ~ time | group,
                       title = "D. Linear Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 int_i_quad <- plot_means(m.1.probability ~ time | group, 
@@ -244,7 +246,7 @@ int_i_quad <- plot_means(m.1.probability ~ time | group,
                        title = "F. Quadratic Time",
                        group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) + xlim(0,21) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 int_i_obs; int_i_dum; int_i_lin; int_i_quad
@@ -270,7 +272,7 @@ summary(pmiss_intensive_i_tdum$m.1.probability - pmiss_intensive_i_obs$m)
 # SHARED PARAMETER ----
 #------------------------------------------------------------------------------#
 
-# shared parameter model ----
+# Model 2: Shared Parameter Model ----
 intensive_i_wc <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -305,7 +307,7 @@ intensive_i_wc <- rblimp(
 # print output
 output(intensive_i_wc)
 
-# quadratic shared parameter model ----
+# Model 3: Quadratic Shared Parameter Model ----
 intensive_i_wcq <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -340,7 +342,7 @@ intensive_i_wcq <- rblimp(
 # print output
 output(intensive_i_wcq)
 
-# residualized shared parameter model ----
+# Model 4: Residualized Shared Parameter Model ----
 intensive_i_wcr <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -376,7 +378,7 @@ intensive_i_wcr <- rblimp(
 # print output
 output(intensive_i_wcr)
 
-# shared parameter model with x latent means ----
+# Model 5: Shared Parameter Model With X Latent Means ----
 intensive_i_wcx <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -415,7 +417,7 @@ output(intensive_i_wcx)
 # DIGGLE-KENWARD MODEL ----
 #------------------------------------------------------------------------------#
 
-# diggle-kenward model ----
+# Model 6: Diggle-Kenward Model ----
 intensive_i_dk <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -450,7 +452,7 @@ intensive_i_dk <- rblimp(
 # print output
 output(intensive_i_dk)
 
-# quadratic diggle-kenward model ----
+# Model 7: Quadratic Diggle-Kenward Model ----
 intensive_i_dkq <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -485,7 +487,42 @@ intensive_i_dkq <- rblimp(
 # print output
 output(intensive_i_dkq)
 
-# diggle-kenward model with x ----
+# Model 8: Residual Diggle-Kenward Model ----
+intensive_i_dkr <- rblimp(
+  data = intensive_i,
+  clusterid = 'l2id',
+  # transform = 'm = ismissing(y)',
+  ordinal = 'm',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group (y - alpha) (y.lag - alpha) | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    adiff = g1a; 
+    d_adiff = adiff / sqrt(alpha.totalvar);
+    bdiff = g1b; 
+    d_bdiff = bdiff / sqrt(exp(g0o));',
+  seed = 90291,
+  burn = 75000,
+  iter = 75000)
+
+# print output
+output(intensive_i_dkr)
+
+# Model 9: Diggle-Kenward Model With X and Lag(X) ----
 intensive_i_dkx <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -522,46 +559,11 @@ intensive_i_dkx <- rblimp(
 # print output
 output(intensive_i_dkx)
 
-# residual diggle-kenward model ----
-intensive_i_dkr <- rblimp(
-  data = intensive_i,
-  clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  timeid = 'time',
-  # dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta omega',
-  fixed = 'group time',
-  center = 'groupmean = x',
-  model = '
-    level2:
-    alpha ~ intercept@g0a group@g1a;
-    beta ~ intercept@g0b group@g1b;
-    omega ~ intercept@g0o;
-    alpha beta omega ~~ alpha beta omega;
-    level1:
-    y ~ intercept@alpha x@beta;
-    var(y) ~ intercept@omega;
-    missingness:
-    m ~ intercept group (y - alpha) (y.lag - alpha) | intercept;
-    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
-  seed = 90291,
-  burn = 75000,
-  iter = 75000)
-
-# print output
-output(intensive_i_dkr)
-
 #------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-# disaggregated model ----
+# Model 10: Disaggregated Model ----
 intensive_i_dis <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
@@ -663,11 +665,11 @@ wcr_tab <- extract_int_params(intensive_i_wcr, "WCR")
 wcx_tab <- extract_int_params(intensive_i_wcx, "WCX")
 dk_tab <- extract_int_params(intensive_i_dk, "DK")
 dkq_tab <- extract_int_params(intensive_i_dkq, "DKQ")
-dkx_tab <- extract_int_params(intensive_i_dkq, "DKX")
 dkr_tab <- extract_int_params(intensive_i_dkr, "DKR")
+dkx_tab <- extract_int_params(intensive_i_dkx, "DKX")
 dis_tab <- extract_int_params(intensive_i_dis, "DIS")
 
-tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,wcx_tab,dk_tab,dkq_tab,dkr_tab,dis_tab)
+tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,wcx_tab,dk_tab,dkq_tab,dkr_tab,dkx_tab,dis_tab)
 tab_intensive_im <- tab
 write.csv(tab_intensive_im,file = '~/desktop/tab_intensive_im.csv')
 

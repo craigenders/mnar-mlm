@@ -59,6 +59,7 @@ output(growth_d_com)
 # CMAR ----
 #------------------------------------------------------------------------------#
 
+# Model 1: CMAR ----
 growth_d_mar <- rblimp(
   data = growth_d,
   clusterid = 'l2id', 
@@ -194,7 +195,7 @@ gro_d_obs <- plot_means(m ~ time | group,
                       title = "A. Observed Probabilities",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_d_dum <- plot_means(m.1.probability ~ time | group, 
@@ -203,7 +204,7 @@ gro_d_dum <- plot_means(m.1.probability ~ time | group,
            title = "G. Dummy Coded Time",
            group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_d_lin <- plot_means(m.1.probability ~ time | group, 
@@ -212,7 +213,7 @@ gro_d_lin <- plot_means(m.1.probability ~ time | group,
                       title = "C. Linear Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_d_quad <- plot_means(m.1.probability ~ time | group, 
@@ -221,7 +222,7 @@ gro_d_quad <- plot_means(m.1.probability ~ time | group,
                       title = "E. Quadratic Time",
                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
   theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dotted", "solid")) +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   geom_line(linewidth = .25)
 
 gro_d_obs; gro_d_dum; gro_d_lin; gro_d_quad
@@ -244,16 +245,16 @@ summary(pmiss_growth_d_tlin$m.1.probability - pmiss_growth_d_obs$m)
 summary(pmiss_growth_d_tquad$m.1.probability - pmiss_growth_d_obs$m)
 
 #------------------------------------------------------------------------------#
-# FIGURE 3 ----
+# FIGURE 4 ----
 #------------------------------------------------------------------------------#
 
-fig3col1 <- gro_d_obs / gro_d_lin / gro_d_quad / gro_d_dum
-fig3col2 <- int_d_obs / int_d_lin / int_d_quad / int_d_dum
-figure3 <- fig3col1 | fig3col2
+fig4col1 <- gro_d_obs / gro_d_lin / gro_d_quad / gro_d_dum
+fig4col2 <- int_d_obs / int_d_lin / int_d_quad / int_d_dum
+figure4 <- fig4col1 | fig4col2
 
 ggsave(
-  filename = "~/desktop/Figure 3. Time Related (DO).pdf",
-  plot = figure3,
+  filename = "~/desktop/Figure 4. Time Related (DO).pdf",
+  plot = figure4,
   width = 8.5,
   height = 11,
   units = "in"
@@ -263,7 +264,7 @@ ggsave(
 # SHARED PARAMETER MODEL ----
 #------------------------------------------------------------------------------#
 
-# wu-carroll model ----
+# Model 2: Shared Parameter Model ----
 growth_d_wc <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -281,7 +282,7 @@ growth_d_wc <- rblimp(
     y ~ intercept@alpha time@beta;
     missingness:
     d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 d*alpha d*beta | intercept@0;
+    m ~ intercept@-3 alpha*d beta*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -293,7 +294,7 @@ growth_d_wc <- rblimp(
 # print output
 output(growth_d_wc)
 
-# quadratic wu-carroll model ----
+# Model 3: Quadratic Shared Parameter Model ----
 growth_d_wcq <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -311,7 +312,7 @@ growth_d_wcq <- rblimp(
     y ~ intercept@alpha time@beta;
     missingness:
     d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 d*alpha d*alpha^2 d*beta d*beta^2 | intercept@0;
+    m ~ intercept@-3 alpha*d alpha*d^2 beta*d beta*d^2 | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -323,7 +324,7 @@ growth_d_wcq <- rblimp(
 # print output
 output(growth_d_wcq)
 
-# residualized wu-carroll model ----
+# Model 4: Residualized Shared Parameter Model ----
 growth_d_wcr <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -343,7 +344,7 @@ growth_d_wcr <- rblimp(
     alpha_res = alpha - (g0a + g1a*group);
     beta_res = beta - (g0b + g1b*group);
     d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 d*alpha_res d*beta_res | intercept@0;
+    m ~ intercept@-3 alpha*d_res beta*d_res | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -359,7 +360,7 @@ output(growth_d_wcr)
 # SELECTION MODEL ----
 #------------------------------------------------------------------------------#
 
-# diggle-kenward model ----
+# Model 5: Diggle-Kenward Model ----
 growth_d_dk <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -377,7 +378,7 @@ growth_d_dk <- rblimp(
     y ~ intercept@alpha time@beta;
     missingness:
     d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 d*y d*y.lag | intercept@0;
+    m ~ intercept@-3 y*d y.lag*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -389,7 +390,7 @@ growth_d_dk <- rblimp(
 # print output
 output(growth_d_dk)
 
-# quadratic diggle-kenward model ----
+# Model 6: Quadratic Diggle-Kenward Model ----
 growth_d_dkq <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -407,7 +408,7 @@ growth_d_dkq <- rblimp(
     y ~ intercept@alpha time@beta;
     missingness:
     d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 d*y d*y^2 d*y.lag | intercept@0;
+    m ~ intercept@-3 y*d y^2*d y.lag*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -419,7 +420,7 @@ growth_d_dkq <- rblimp(
 # print output
 output(growth_d_dkq)
 
-# detrended diggle-kenward model ----
+# Model 7: Residual Diggle-Kenward Model ----
 growth_d_dkd <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -439,7 +440,7 @@ growth_d_dkd <- rblimp(
     d = ifelse(time < 1, 0, 1);
     yw = y - (alpha + beta*time);
     lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 d*yw d*lagyw | intercept@0;
+    m ~ intercept@-3 y*dw d*lagyw | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -455,7 +456,7 @@ output(growth_d_dkd)
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-# disaggregated model ----
+# Model 8: Disaggregated Model ----
 growth_d_dis <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
@@ -475,7 +476,7 @@ growth_d_dis <- rblimp(
     d = ifelse(time < 1, 0, 1);
     yw = y - (alpha + beta*time);
     lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 d*yw d*lagyw d*alpha d*beta | intercept@0;
+    m ~ intercept@-3 y*dw d*lagyw alpha*d beta*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 

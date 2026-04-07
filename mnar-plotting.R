@@ -20,7 +20,7 @@
 plot_means <- function(formula, model, ylab = NULL, title = NULL,
                        group_labels = NULL, fs = 14,
                        use_latent_growth = FALSE,
-                       id_var = "id",
+                       id_var = "l2id",
                        alpha_var = "alpha.latent",
                        beta_var  = "beta.latent") {
   
@@ -112,7 +112,7 @@ plot_means <- function(formula, model, ylab = NULL, title = NULL,
                                linetype = factor(.data[[group_var]]),
                                group = factor(.data[[group_var]]))) +
       geom_line(linewidth = 1) +
-      geom_point(size = 2) +
+      # geom_point(size = 2) +
       scale_linetype_manual(values = c("0" = "solid", "1" = "dashed")) +
       labs(title = title, x = x_var, y = ylab, linetype = group_var)
     
@@ -128,7 +128,7 @@ plot_means <- function(formula, model, ylab = NULL, title = NULL,
     
     p <- ggplot(plot_data, aes(x = .data[[x_var]], y = .data[[outcome]])) +
       geom_line(linewidth = 1) +
-      geom_point(size = 2) +
+      # geom_point(size = 2) +
       labs(title = title, x = x_var, y = ylab)
   }
   
