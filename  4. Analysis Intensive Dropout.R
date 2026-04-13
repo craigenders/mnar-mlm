@@ -24,6 +24,8 @@ intensive_d <- read.csv(filepath, stringsAsFactors = T)
 
 intensive_d_comp <- intensive_d
 
+intensive_d$y[is.na(intensive_d$m)] <- NA
+intensive_d$x[is.na(intensive_d$m)] <- NA
 intensive_d <- intensive_d[!is.na(intensive_d$m),]
 
 # plotting functions
@@ -81,7 +83,7 @@ intensive_d_mar <- rblimp(
     level1:
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
-    m ~ intercept;',
+    m ~ intercept | 1@0;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
@@ -120,7 +122,7 @@ intensive_d_tlin <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d d*group d*(time - 5) d*(time - 5)*group | intercept@0;',
+    m ~ intercept@-3 d group*d (time - 5)*d (time - 5)*group*d | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -151,7 +153,7 @@ intensive_d_tquad <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d d*group d*(time - 5) d*(time - 5)^2 d*(time - 5)*group d*(time - 5)^2*group | intercept@0;',
+    m ~ intercept@-3 d group*d (time - 5)*d (time - 5)^2*d (time - 5)*group*d (time - 5)^2*group*d | intercept@0;',
   seed = 90291,
   burn = 10000,
   iter = 10000,
@@ -182,7 +184,7 @@ intensive_d_tdum <- rblimp(
     missingness:
     d = ifelse(time < 5, 0, 1);
     m ~ intercept@-3 | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   seed = 90291,
   burn = 20000,
   iter = 20000)
@@ -277,21 +279,21 @@ intensive_d_wc <- rblimp(
     missingness:
     d = ifelse(time < 5, 0, 1);
     m ~ intercept@-3 d*alpha d*omega | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 150000,
-  iter = 150000)
+  burn = 100000,
+  iter = 100000)
 
 # print output
 output(intensive_d_wc)
 
 # Model 3: Quadratic Shared Parameter Model ----
-intensive_d_wcq <- rblimp(
+intensive_d_wcq <- rblimp(3
   data = intensive_d,
   clusterid = 'l2id',
   # transform = 'm = ismissing(y)',
@@ -320,8 +322,8 @@ intensive_d_wcq <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 150000,
-  iter = 150000)
+  burn = 100000,
+  iter = 100000)
 
 # print output
 output(intensive_d_wcq)
@@ -357,8 +359,8 @@ intensive_d_wcr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 50000,
-  iter = 50000)
+  burn = 100000,
+  iter = 100000)
 
 # print output
 output(intensive_d_wcr)
@@ -393,8 +395,8 @@ intensive_d_wcx <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 200000,
-  iter = 200000)
+  burn = 100000,
+  iter = 100000)
 
 # print output
 output(intensive_d_wcx)

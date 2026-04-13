@@ -21,6 +21,8 @@ filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth
 
 # create data frame from github data
 growth_i <- read.csv(filepath1, stringsAsFactors = T)
+growth_i_norows <- growth_i[!is.na(growth_i$y),]
+names(growth_i_norows)[names(growth_i_norows) == "m"] <- "m_"
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -277,6 +279,7 @@ ggsave(
 # SHARED PARAMETER MODEL ----
 #------------------------------------------------------------------------------#
 
+set_blimp('/applications/blimp/blimp')
 # Model 2: Shared Parameter Model ----
 growth_i_wc <- rblimp(
   data = growth_i,
@@ -306,6 +309,37 @@ growth_i_wc <- rblimp(
 
 # print output
 output(growth_i_wc)
+
+set_blimp('/applications/blimp/blimp-nightly')
+# Model 2: Shared Parameter Model TEST ----
+growth_i_wc_nr <- rblimp(
+  data = growth_i_norows,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    m ~ intercept group alpha beta | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+  seed = 90291,
+  burn = 20000,
+  iter = 20000)
+
+# print output
+output(growth_i_wc_nr)
+
+test <- growth_i_wc_nr@average_imp
 
 # Model 3: Quadratic Shared Parameter Model ----
 growth_i_wcq <- rblimp(
