@@ -121,11 +121,11 @@ intensive_d_tlin <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d group*d (time - 5)*d (time - 5)*group*d | intercept@0;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 d group*d (time - 7)*d (time - 7)*group*d | intercept@0;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000,
+  burn = 20000,
+  iter = 20000,
   nimps = 20)
 
 # print output
@@ -152,11 +152,11 @@ intensive_d_tquad <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d group*d (time - 5)*d (time - 5)^2*d (time - 5)*group*d (time - 5)^2*group*d | intercept@0;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 d group*d (time - 7)*d (time - 7)^2*d (time - 7)*group*d (time - 7)^2*group*d | intercept@0;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000,
+  burn = 20000,
+  iter = 20000,
   nimps = 20)
 
 # print output
@@ -182,7 +182,7 @@ intensive_d_tdum <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
+    d = ifelse(time < 7, 0, 1);
     m ~ intercept@-3 | intercept@0;
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   seed = 90291,
@@ -196,7 +196,7 @@ output(intensive_d_tdum)
 # PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
 #------------------------------------------------------------------------------#
 
-ymax <- .20
+ymax <- .15
 ymin <- 0
 
 int_d_obs <- plot_means(m ~ time | group, 
@@ -277,8 +277,8 @@ intensive_d_wc <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d*alpha d*omega | intercept@0;
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 alpha*d omega*d | intercept@0;
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
@@ -286,14 +286,14 @@ intensive_d_wc <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 75000,
+  iter = 75000)
 
 # print output
 output(intensive_d_wc)
 
 # Model 3: Quadratic Shared Parameter Model ----
-intensive_d_wcq <- rblimp(3
+intensive_d_wcq <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   # transform = 'm = ismissing(y)',
@@ -313,17 +313,17 @@ intensive_d_wcq <- rblimp(3
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d*alpha d*alpha^2 d*omega d*omega^2 | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 alpha*d omega*d alpha^2*d omega^2*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(intensive_d_wcq)
@@ -349,7 +349,7 @@ intensive_d_wcr <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
+    d = ifelse(time < 7, 0, 1);
     alpha_res = alpha - (g0a + g1a*group);
     m ~ intercept@-3 d*alpha_res d*omega | intercept@0;
     { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
@@ -359,8 +359,8 @@ intensive_d_wcr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_d_wcr)
@@ -386,8 +386,9 @@ intensive_d_wcx <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 d*alpha d*omega d*x.mean | intercept@0;
+    d = ifelse(time < 7, 0, 1);
+    alpha_res = alpha - (g0a + g1a*group);
+    m ~ intercept@-3 d*alpha_res d*omega d*x.mean | intercept@0;
     { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
   parameters = '
     adiff = g1a; 
@@ -395,8 +396,8 @@ intensive_d_wcx <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(intensive_d_wcx)
@@ -426,17 +427,17 @@ intensive_d_dk <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
+    d = ifelse(time < 7, 0, 1);
     m ~ intercept@-3 y*d y.lag*d | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 20000,
-  iter = 20000)
+  burn = 30000,
+  iter = 30000)
 
 # print output
 output(intensive_d_dk)
@@ -462,17 +463,17 @@ intensive_d_dkq <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 y*d y*d^2 y.lag*d | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 y*d y^2*d y.lag*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 125000,
+  iter = 125000)
 
 # print output
 output(intensive_d_dkq)
@@ -498,7 +499,7 @@ intensive_d_dkr <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
+    d = ifelse(time < 7, 0, 1);
     m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d | intercept@0;
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
@@ -507,8 +508,8 @@ intensive_d_dkr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 40000,
-  iter = 40000)
+  burn = 50000,
+  iter = 50000)
 
 # print output
 output(intensive_d_dkr)
@@ -533,25 +534,25 @@ intensive_d_dkx <- rblimp(
     alpha beta omega ~~ alpha beta omega;
     level1:
     x ~ intercept@xmeans;
-    y ~ intercept@alpha (x - xmean)@beta;
+    y ~ intercept@alpha (x - xmeans)@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
-    m ~ intercept@-3 y*d y.lag*d d*x d*x.lag | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 y*d y.lag*d x*d x.lag*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 20000,
-  iter = 20000)
+  burn = 30000,
+  iter = 30000)
 
 # print output
 output(intensive_d_dkx)
 
-intensive_d_dkx@estimates
+# intensive_d_dkx@estimates
 
 #------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
@@ -578,18 +579,18 @@ intensive_d_dis <- rblimp(
     y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 5, 0, 1);
+    d = ifelse(time < 7, 0, 1);
     alpha_res = alpha - (g0a + g1a*group);
-    m ~ intercept@-3 d*(y - alpha) d*(y.lag - alpha) d*alpha_res d*omega | intercept@0;
-    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
+    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d alpha_res*d omega*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
     d_adiff = adiff / sqrt(alpha.totalvar);
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(intensive_d_dis)
