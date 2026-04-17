@@ -23,8 +23,11 @@ filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth
 # create data frame from github data
 growth_d <- read.csv(filepath1, stringsAsFactors = T)
 
-growth_comp <- growth_d
-growth_d <- growth_d[!is.na(growth_d$m),]
+# rename hard coded indicator
+names(growth_d)[names(growth_d) == "m"] <- "m_"
+
+# growth_comp <- growth_d
+# growth_d <- growth_d[!is.na(growth_d$m),]
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -35,7 +38,7 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 #------------------------------------------------------------------------------#
 
 growth_d_com <- rblimp(
-  data = growth_comp,
+  data = growth_d,
   clusterid = 'l2id', 
   latent = 'l2id = alpha beta',
   fixed = 'group time',
@@ -50,8 +53,8 @@ growth_d_com <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_com)
@@ -64,8 +67,9 @@ output(growth_d_com)
 growth_d_mar <- rblimp(
   data = growth_d,
   clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
-  ordinal = 'group',
   fixed = 'group time',
   model = '
     level2:
@@ -79,8 +83,8 @@ growth_d_mar <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_mar)
@@ -92,11 +96,9 @@ output(growth_d_mar)
 # linear trend
 growth_d_tlin <- rblimp(
   data = growth_d,
-  clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -123,8 +125,8 @@ growth_d_tlin <- rblimp(
     p4g1 = phi(-3 + b1*4 + b2*4*1);  # time=4, group=1
   ',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_tlin)
@@ -133,9 +135,8 @@ output(growth_d_tlin)
 growth_d_tquad <- rblimp(
   data = growth_d,
   clusterid = 'l2id', 
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
-  # timeid = 'time',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -148,8 +149,8 @@ growth_d_tquad <- rblimp(
     missingness:
     m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_tquad)
@@ -157,10 +158,9 @@ output(growth_d_tquad)
 # dummy coded time
 growth_d_tdum <- rblimp(
   data = growth_d,
-  clusterid = 'l2id', 
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (binary)',
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -177,8 +177,8 @@ growth_d_tdum <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_tdum)
@@ -269,9 +269,8 @@ summary(pmiss_growth_d_tquad$m.1.probability - pmiss_growth_d_obs$m)
 growth_d_wc <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -299,9 +298,8 @@ output(growth_d_wc)
 growth_d_wcq <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -319,8 +317,8 @@ growth_d_wcq <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(growth_d_wcq)
@@ -329,9 +327,8 @@ output(growth_d_wcq)
 growth_d_wcr <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -351,8 +348,8 @@ growth_d_wcr <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(growth_d_wcr)
@@ -366,8 +363,7 @@ growth_d_dk <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+    dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -396,8 +392,7 @@ growth_d_dkq <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -426,8 +421,7 @@ growth_d_dkd <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -462,8 +456,7 @@ growth_d_dis <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -483,8 +476,8 @@ growth_d_dis <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(growth_d_dis)

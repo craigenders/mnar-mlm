@@ -23,6 +23,9 @@ filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensi
 # create data frame from github data
 intensive_i <- read.csv(filepath, stringsAsFactors = T)
 
+# rename hard coded indicator
+names(intensive_i)[names(intensive_i) == "m"] <- "m_"
+
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
@@ -35,7 +38,7 @@ intensive_i_com <- rblimp(
   data = intensive_i,
   clusterid = 'l2id', 
   latent = 'l2id = alpha beta omega',
-  fixed = 'group',
+  fixed = 'group time',
   center = 'groupmean = xcom',
   model = '
     level2:
@@ -52,8 +55,8 @@ intensive_i_com <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_i_com)
@@ -66,9 +69,11 @@ output(intensive_i_com)
 intensive_i_mar <- rblimp(
   data = intensive_i,
   clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
-  fixed = 'group',
-  # center = 'groupmean = x',
+  fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
@@ -76,8 +81,7 @@ intensive_i_mar <- rblimp(
     omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
-    xcent = x - x.mean;
-    y ~ intercept@alpha xcent@beta;
+    y ~ intercept@alpha x@beta;
     var(y) ~ intercept@omega;
     m ~ intercept;',
   parameters = '
@@ -99,15 +103,13 @@ output(intensive_i_mar)
 # fit unconditional model
 icc_intensive_i <- rblimp(
   data = intensive_i,
-  clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   model = 'm ~ intercept | intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(icc_intensive_i)
@@ -119,11 +121,9 @@ output(icc_intensive_i)
 # linear trend ----
 intensive_i_tlin <- rblimp(
   data = intensive_i,
-  clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'time group',
   center = 'groupmean = x',
@@ -139,8 +139,8 @@ intensive_i_tlin <- rblimp(
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_i_tlin)
@@ -148,11 +148,9 @@ output(intensive_i_tlin)
 # quadratic trend ----
 intensive_i_tquad <- rblimp(
   data = intensive_i,
-  clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'time group',
   center = 'groupmean = x',
@@ -168,8 +166,8 @@ intensive_i_tquad <- rblimp(
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_i_tquad)
@@ -177,11 +175,9 @@ output(intensive_i_tquad)
 # dummy-coded time ----
 intensive_i_tdum <- rblimp(
   data = intensive_i,
-  clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'time group',
   center = 'groupmean = x',
@@ -201,8 +197,8 @@ intensive_i_tdum <- rblimp(
     m ~ intercept group | intercept;
     { t in 1:19 } : m ~ (time == [t]);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(intensive_i_tdum)
@@ -277,10 +273,8 @@ summary(pmiss_intensive_i_tdum$m.1.probability - pmiss_intensive_i_obs$m)
 intensive_i_wc <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -312,10 +306,8 @@ output(intensive_i_wc)
 intensive_i_wcq <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -347,10 +339,8 @@ output(intensive_i_wcq)
 intensive_i_wcr <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -383,10 +373,8 @@ output(intensive_i_wcr)
 intensive_i_wcx <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -422,10 +410,8 @@ output(intensive_i_wcx)
 intensive_i_dk <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -457,10 +443,8 @@ output(intensive_i_dk)
 intensive_i_dkq <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -492,10 +476,8 @@ output(intensive_i_dkq)
 intensive_i_dkr <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -527,23 +509,20 @@ output(intensive_i_dkr)
 intensive_i_dkx <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta omega xmean',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega xmeans',
   fixed = 'group time',
-  # center = 'groupmean = x',
   model = '
     level2:
-    xmean ~ intercept;
+    xmeans ~ intercept;
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
     omega ~ intercept@g0o;
     alpha beta omega ~~ alpha beta omega;
     level1:
-    x ~ intercept@xmean;
-    y ~ intercept@alpha (x - xmean)@beta;
+    x ~ intercept@xmeans;
+    y ~ intercept@alpha (x - xmeans)@beta;
     var(y) ~ intercept@omega;
     missingness:
     m ~ intercept group y y.lag x x.lag | intercept;
@@ -568,10 +547,8 @@ output(intensive_i_dkx)
 intensive_i_dis <- rblimp(
   data = intensive_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -774,8 +751,8 @@ conv_intensive_im <- rbind(
 #   clusterid = 'l2id', 
 #   transform = 'm = ismissing(y)',
 #   # timeid = 'occasion',
-#   # dropout = 'm = y (missing)',
-#   ordinal = 'm group',
+#   dropout = 'm = y (missing)',
+#   ordinal = 'group',
 #   nominal = 'occasion',
 #   latent = 'l2id = alpha beta u0i',
 #   fixed = 'occasion group time',
@@ -790,8 +767,8 @@ conv_intensive_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion;',
 #   seed = 90291,
-#   burn = 10000,
-#   iter = 10000,
+#   burn = 20000,
+#   iter = 20000,
 #   nimps = 20)
 # 
 # # print output
@@ -803,8 +780,8 @@ conv_intensive_im <- rbind(
 #   clusterid = 'l2id', 
 #   transform = 'm = ismissing(y)',
 #   # timeid = 'occasion',
-#   # dropout = 'm = y (missing)',
-#   ordinal = 'm group',
+#   dropout = 'm = y (missing)',
+#   ordinal = 'group',
 #   nominal = 'occasion',
 #   latent = 'l2id = alpha beta u0i',
 #   fixed = 'time occasion group',

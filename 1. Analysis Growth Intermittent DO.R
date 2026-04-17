@@ -23,6 +23,9 @@ filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth
 # create data frame from github data
 growth_i <- read.csv(filepath1, stringsAsFactors = T)
 
+# rename hard coded indicator
+names(growth_i)[names(growth_i) == "m"] <- "m_"
+
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
@@ -50,8 +53,8 @@ growth_i_com <- rblimp(
     sdy = sqrt(ycom.totalvar + alpha.totalvar);
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_i_com)
@@ -64,6 +67,8 @@ output(growth_i_com)
 growth_i_mar <- rblimp(
   data = growth_i,
   clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -78,8 +83,8 @@ growth_i_mar <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_i_mar)
@@ -92,14 +97,12 @@ output(growth_i_mar)
 icc_growth_i <- rblimp(
   data = growth_i,
   clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   model = 'm ~ intercept | intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(icc_growth_i)
@@ -112,10 +115,8 @@ output(icc_growth_i)
 growth_i_tlin <- rblimp(
   data = growth_i,
   clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -128,8 +129,8 @@ growth_i_tlin <- rblimp(
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_i_tlin)
@@ -138,10 +139,8 @@ output(growth_i_tlin)
 growth_i_tquad <- rblimp(
   data = growth_i,
   clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -154,8 +153,8 @@ growth_i_tquad <- rblimp(
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_i_tquad)
@@ -164,10 +163,8 @@ output(growth_i_tquad)
 growth_i_tdum <- rblimp(
   data = growth_i,
   clusterid = 'l2id', 
-  # transform = 'm = ismissing(y)',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -184,8 +181,8 @@ growth_i_tdum <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_i_tdum)
@@ -282,10 +279,8 @@ summary(pmiss_growth_i_tquad$m.1.probability - pmiss_growth_i_obs$m)
 growth_i_wc <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -312,10 +307,8 @@ output(growth_i_wc)
 growth_i_wcq <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -342,10 +335,8 @@ output(growth_i_wcq)
 growth_i_wcr <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
-  # transform = 'm = ismissing(y)',
-  ordinal = 'm',
-  # timeid = 'time',
-  # dropout = 'm = y (missing)',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -379,8 +370,7 @@ growth_i_dk <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -408,8 +398,7 @@ growth_i_dk_noprior <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -438,8 +427,7 @@ growth_i_dkq <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -467,8 +455,7 @@ growth_i_dkd <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -539,8 +526,7 @@ growth_i_dis <- rblimp(
   data = growth_i,
   clusterid = 'l2id',
   timeid = 'time',
-  # dropout = 'm = y (missing)',
-  ordinal = 'm',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -767,7 +753,7 @@ conv_growth_im <- rbind(
 #   transform = 'm = ismissing(y)',
 #   # timeid = 'occasion',
 #   # dropout = 'm = y (missing)',
-#   ordinal = 'm group',
+#   ordinal = 'group',
 #   nominal = 'occasion',
 #   latent = 'l2id = alpha beta u0i',
 #   fixed = 'occasion group time',
@@ -782,8 +768,8 @@ conv_growth_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion;',
 #   seed = 90291,
-#   burn = 10000,
-#   iter = 10000,
+#   burn = 20000,
+#   iter = 20000,
 #   nimps = 20)
 # 
 # # print output
@@ -796,7 +782,7 @@ conv_growth_im <- rbind(
 #   transform = 'm = ismissing(y)',
 #   # timeid = 'occasion',
 #   # dropout = 'm = y (missing)',
-#   ordinal = 'm group',
+#   ordinal = 'group',
 #   nominal = 'occasion',
 #   latent = 'l2id = alpha beta u0i',
 #   fixed = 'time occasion group',
@@ -825,7 +811,7 @@ conv_growth_im <- rbind(
 #   transform = 'm = ismissing(y)',
 #   # timeid = 'occasion',
 #   # dropout = 'm = y (missing)',
-#   ordinal = 'm group',
+#   ordinal = 'group',
 #   nominal = 'occasion',
 #   latent = 'l2id = alpha beta u0i',
 #   fixed = 'time occasion group',
