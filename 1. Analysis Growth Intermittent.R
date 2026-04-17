@@ -8,7 +8,8 @@ options (scipen = 999)
 library(ggplot2)
 library(patchwork)
 library(rblimp)
-set_blimp('/applications/blimp/blimp')
+
+# set_blimp('/applications/blimp/blimp')
 # set_blimp('/applications/blimp/blimp-nightly')
 # remotes::update_packages('rblimp')
 
@@ -21,8 +22,6 @@ filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth
 
 # create data frame from github data
 growth_i <- read.csv(filepath1, stringsAsFactors = T)
-growth_i_norows <- growth_i[!is.na(growth_i$y),]
-names(growth_i_norows)[names(growth_i_norows) == "m"] <- "m_"
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -263,23 +262,22 @@ summary(pmiss_growth_i_tquad$m.1.probability - pmiss_growth_i_obs$m)
 # FIGURE 3 ----
 #------------------------------------------------------------------------------#
 
-fig3col1 <- gro_i_obs / gro_i_lin / gro_i_quad / gro_i_dum
-fig3col2 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
-figure3 <- fig3col1 | fig3col2
-
-ggsave(
-  filename = "~/desktop/Figure 3. Time Related (IM).pdf",
-  plot = figure3,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
+# fig3col1 <- gro_i_obs / gro_i_lin / gro_i_quad / gro_i_dum
+# fig3col2 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
+# figure3 <- fig3col1 | fig3col2
+# 
+# ggsave(
+#   filename = "~/desktop/Figure 3. Time Related (IM).pdf",
+#   plot = figure3,
+#   width = 8.5,
+#   height = 11,
+#   units = "in"
+# )
 
 #------------------------------------------------------------------------------#
 # SHARED PARAMETER MODEL ----
 #------------------------------------------------------------------------------#
 
-set_blimp('/applications/blimp/blimp')
 # Model 2: Shared Parameter Model ----
 growth_i_wc <- rblimp(
   data = growth_i,
@@ -309,37 +307,6 @@ growth_i_wc <- rblimp(
 
 # print output
 output(growth_i_wc)
-
-set_blimp('/applications/blimp/blimp-nightly')
-# Model 2: Shared Parameter Model TEST ----
-growth_i_wc_nr <- rblimp(
-  data = growth_i_norows,
-  clusterid = 'l2id',
-  timeid = 'time',
-  dropout = 'm = y (missing)',
-  latent = 'l2id = alpha beta',
-  fixed = 'group time',
-  model = '
-    level2:
-    alpha ~ intercept@g0a group@g1a;
-    beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
-    level1:
-    y ~ intercept@alpha time@beta;
-    missingness:
-    m ~ intercept group alpha beta | intercept;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
-  seed = 90291,
-  burn = 20000,
-  iter = 20000)
-
-# print output
-output(growth_i_wc_nr)
-
-test <- growth_i_wc_nr@average_imp
 
 # Model 3: Quadratic Shared Parameter Model ----
 growth_i_wcq <- rblimp(
@@ -599,6 +566,21 @@ growth_i_dis <- rblimp(
 output(growth_i_dis)
 
 #------------------------------------------------------------------------------#
+# FIGURE 1 ----
+#------------------------------------------------------------------------------#
+
+# figure1 <- means_gro_i_mar / means_int_i_mar
+# 
+# ggsave(
+#   filename = "~/desktop/Figure 1. CMAR.pdf",
+#   plot = figure1,
+#   width = 8.5,
+#   height = 11,
+#   units = "in"
+# )
+
+
+#------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
 #------------------------------------------------------------------------------#
 
@@ -632,7 +614,7 @@ extract_growth_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Intercept, Slope)",
     "Var(Residual)",
-    "Mean Diff.",
+    "Endpoint Mean Diff.",
     "Std. Mean Diff.",
     "Pseudo-Rsq"
   )
@@ -645,12 +627,15 @@ extract_growth_params <- function(object, method) {
   res
 }
 
+
+# main summary table ----
+
 # com_tab <- extract_growth_d_params(growth_d_com, "COM")
 mar_tab <- extract_growth_params(growth_i_mar, "MAR")
-wc_tab <- extract_growth_params(growth_i_wc, "WC")
+wc_tab  <- extract_growth_params(growth_i_wc, "WC")
 wcq_tab <- extract_growth_params(growth_i_wcq, "WCQ")
 wcr_tab <- extract_growth_params(growth_i_wcr, "WCR")
-dk_tab <- extract_growth_params(growth_i_dk, "DK")
+dk_tab  <- extract_growth_params(growth_i_dk, "DK")
 dkq_tab <- extract_growth_params(growth_i_dkq, "DKQ")
 dkd_tab <- extract_growth_params(growth_i_dkd, "DKD")
 dis_tab <- extract_growth_params(growth_i_dis, "DIS")
@@ -658,9 +643,9 @@ dis_tab <- extract_growth_params(growth_i_dis, "DIS")
 tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
 tab_growth_im <- tab
 
-write.csv(tab_growth_im,file = '~/desktop/tab_growth_im.csv')
+# write.csv(tab_growth_im,file = '~/desktop/MNAR Results/tab_growth_im.csv')
 
-# rearrange for table
+# mean difference table ----
 
 # Extract rows
 mean_row   <- tab["Mean Diff.", ]
@@ -685,147 +670,91 @@ out <- do.call(rbind, lapply(methods, function(m) {
 # Final formatting
 rownames(out) <- methods
 out <- as.data.frame(out)
-colnames(out) <- c("Mean Diff", "SD", "Std. Mean Diff", "SD", "Pseudo R²")
+colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
-out
+es_growth_im <- out
+# write.csv(es_growth_im,file = '~/desktop/MNAR Results/es_growth_im.csv')
 
+# diagnostics table ----
 
-
-#------------------------------------------------------------------------------#
-# PLOT REGRESSION LINES ----
-#------------------------------------------------------------------------------#
-
-means_gro_i_mar <- plot_means(y.predicted ~ time | group,
-                        model = growth_i_mar,
-                        ylab = "Y",
-                        title = "A. Group-Specifc Trajectories (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
-
-means_int_i_mar <- plot_means(y.predicted ~ xcent | group,
-                          model = intensive_i_mar,
-                          ylab = "Y",
-                          title = "B. Group-Specifc Regressions (Intensive Data)",
-                          group_labels = c("0" = "0", "1" = "1"),
-                          use_latent_growth = T) + ylim(3, 5)
-
-#------------------------------------------------------------------------------#
-# FIGURE 1 ----
-#------------------------------------------------------------------------------#
-
-figure1 <- means_gro_i_mar / means_int_i_mar
-
-ggsave(
-  filename = "~/desktop/Figure 1. CMAR.pdf",
-  plot = figure1,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
-
-#------------------------------------------------------------------------------#
-# PLOT GROWTH CURVES OLD ----
-#------------------------------------------------------------------------------#
-
-p_gro_i_mar <- plot_means(y.predicted ~ time | group,
-                          model = growth_i_mar,
-                          ylab = "Y",
-                          title = "A. Group-Specifc Trajectories (Growth Data)",
-                          group_labels = c("0" = "0", "1" = "1"),
-                          use_latent_growth = TRUE) + ylim(0, 7)
-
-p_gro_i_dum <- plot_means(y.predicted ~ time | group, 
-                        model = growth_i_tdum,
-                        ylab = "Y",
-                        title = "Time Dummy Model-Implied Means (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
-
-p_gro_i_wcl <- plot_means(y.predicted ~ time | group, 
-                        model = growth_i_wcl,
-                        ylab = "Y",
-                        title = "W-C Model-Implied Means (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
-
-p_gro_i_wcr <- plot_means(y.predicted ~ time | group, 
-                        model = growth_i_wcr,
-                        ylab = "Y",
-                        title = "Res W-C Model-Implied Means (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
-
-p_gro_i_dky <- plot_means(y.predicted ~ time | group, 
-                        model = growth_i_dky,
-                        ylab = "Y",
-                        title = "W-C Model-Implied Means (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
-
-p_gro_i_dkr <- plot_means(y.predicted ~ time | group, 
-                        model = growth_i_dkr,
-                        ylab = "Y",
-                        title = "Res W-C Model-Implied Means (Growth Data)",
-                        group_labels = c("0" = "0", "1" = "1"),
-                        use_latent_growth = TRUE) + ylim(0, 7)
-
-p_gro_i_mar; p_gro_i_dum; p_gro_i_wcl; p_gro_i_wcr; p_gro_i_dky; p_gro_i_dkr
-
-#------------------------------------------------------------------------------#
-# EXTRACT ESTIMATES ----
-#------------------------------------------------------------------------------#
-
-extract_growth_i_params <- function(object, method) {
+extract_convergence <- function(object, method) {
   
-  tab <- object@estimates
+  neff <- object@estimates[, "N_Eff"]
+  neff <- neff[is.finite(neff)]
   
-  rows <- c(
-    "alpha ~ Intercept",
-    "beta ~ Intercept",
-    "alpha ~ group",
-    "beta ~ group",
-    "alpha residual variance",
-    "beta residual variance",
-    "Cor( alpha, beta )",
-    "y residual variance",
-    "Parameter: diff",
-    "Parameter: d_diff"
+  psr_row <- as.numeric(object@psr[20, ])
+  psr_row <- psr_row[is.finite(psr_row)]
+  
+  data.frame(
+    Min_Neff = round(min(neff),    0),
+    Max_Neff = round(max(neff),    0),
+    Min_PSR  = round(min(psr_row), 3),
+    Max_PSR  = round(max(psr_row), 3),
+    row.names = method
   )
-  
-  res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
-  
-  # Rename rows to cleaner presentation labels
-  rownames(res) <- c(
-    "Intercept (G = 0)",
-    "Slope (G = 0)",
-    "Intercept Diff.",
-    "Slope Diff.",
-    "Var(Intercept)",
-    "Var(Slope)",
-    "Cor(Intercept, Slope)",
-    "Var(Residual)",
-    "Endpoint Mean Diff.",
-    "Std. Mean Diff."
-  )
-  
-  colnames(res) <- c(
-    paste0("Est_", method),
-    paste0("SD_", method)
-  )
-  
-  res
 }
 
-com_tab <- extract_growth_i_params(growth_i_com, "COM")
-mar_tab <- extract_growth_i_params(growth_i_mar, "MAR")
-dum_tab <- extract_growth_i_params(growth_i_tdum, "DUM")
-wcl_tab <- extract_growth_i_params(growth_i_wcl, "WCL")
-wcr_tab <- extract_growth_i_params(growth_i_wcr, "WCR")
-dky_tab <- extract_growth_i_params(growth_i_dky, "DKL")
-dkr_tab <- extract_growth_i_params(growth_i_dkr, "DKR")
-dis_tab <- extract_growth_i_params(growth_i_dis, "DIS")
+conv_growth_im <- rbind(
+  extract_convergence(growth_i_mar, "MAR"),
+  extract_convergence(growth_i_wc, "WC"),
+  extract_convergence(growth_i_wcq, "WCQ"),
+  extract_convergence(growth_i_wcr, "WCR"),
+  extract_convergence(growth_i_dk, "DK"),
+  extract_convergence(growth_i_dkq, "DKQ"),
+  extract_convergence(growth_i_dkd, "DKD"),
+  extract_convergence(growth_i_dis, "DIS"),
+)
 
-cbind(com_tab,mar_tab,dum_tab,wcl_tab,wcr_tab,dky_tab,dkr_tab,dis_tab)
+# write.csv(conv_growth_im,file = '~/desktop/MNAR Results/conv_growth_im.csv')
+
+
+#------------------------------------------------------------------------------#
+# PLOT GROWTH CURVES ----
+#------------------------------------------------------------------------------#
+
+# p_gro_i_mar <- plot_means(y.predicted ~ time | group,
+#                           model = growth_i_mar,
+#                           ylab = "Y",
+#                           title = "A. Group-Specifc Trajectories (Growth Data)",
+#                           group_labels = c("0" = "0", "1" = "1"),
+#                           use_latent_growth = TRUE) + ylim(0, 7)
+# 
+# p_gro_i_dum <- plot_means(y.predicted ~ time | group, 
+#                         model = growth_i_tdum,
+#                         ylab = "Y",
+#                         title = "Time Dummy Model-Implied Means (Growth Data)",
+#                         group_labels = c("0" = "0", "1" = "1"),
+#                         use_latent_growth = TRUE) + ylim(0, 7)
+# 
+# p_gro_i_wcl <- plot_means(y.predicted ~ time | group, 
+#                         model = growth_i_wcl,
+#                         ylab = "Y",
+#                         title = "W-C Model-Implied Means (Growth Data)",
+#                         group_labels = c("0" = "0", "1" = "1"),
+#                         use_latent_growth = TRUE) + ylim(0, 7)
+# 
+# p_gro_i_wcr <- plot_means(y.predicted ~ time | group, 
+#                         model = growth_i_wcr,
+#                         ylab = "Y",
+#                         title = "Res W-C Model-Implied Means (Growth Data)",
+#                         group_labels = c("0" = "0", "1" = "1"),
+#                         use_latent_growth = TRUE) + ylim(0, 7)
+# 
+# p_gro_i_dky <- plot_means(y.predicted ~ time | group, 
+#                         model = growth_i_dky,
+#                         ylab = "Y",
+#                         title = "W-C Model-Implied Means (Growth Data)",
+#                         group_labels = c("0" = "0", "1" = "1"),
+#                         use_latent_growth = TRUE) + ylim(0, 7)
+# 
+# p_gro_i_dkr <- plot_means(y.predicted ~ time | group, 
+#                         model = growth_i_dkr,
+#                         ylab = "Y",
+#                         title = "Res W-C Model-Implied Means (Growth Data)",
+#                         group_labels = c("0" = "0", "1" = "1"),
+#                         use_latent_growth = TRUE) + ylim(0, 7)
+# 
+# p_gro_i_mar; p_gro_i_dum; p_gro_i_wcl; p_gro_i_wcr; p_gro_i_dky; p_gro_i_dkr
 
 
 #------------------------------------------------------------------------------#

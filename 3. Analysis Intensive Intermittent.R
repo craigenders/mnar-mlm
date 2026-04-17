@@ -8,7 +8,8 @@ options (scipen = 999)
 library(ggplot2)
 library(patchwork)
 library(rblimp)
-set_blimp('/applications/blimp/blimp')
+
+# set_blimp('/applications/blimp/blimp')
 # set_blimp('/applications/blimp/blimp-nightly')
 # remotes::update_packages('rblimp')
 
@@ -657,6 +658,8 @@ extract_int_params <- function(object, method) {
   res
 }
 
+# main summary table ----
+
 # com_tab <- extract_growth_d_params(growth_d_com, "COM")
 mar_tab <- extract_int_params(intensive_i_mar, "MAR")
 wc_tab <- extract_int_params(intensive_i_wc, "WC")
@@ -671,16 +674,19 @@ dis_tab <- extract_int_params(intensive_i_dis, "DIS")
 
 tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,wcx_tab,dk_tab,dkq_tab,dkr_tab,dkx_tab,dis_tab)
 tab_intensive_im <- tab
-write.csv(tab_intensive_im,file = '~/desktop/tab_intensive_im.csv')
+
+# write.csv(tab_intensive_im,file = '~/desktop/MNAR Results/tab_intensive_im.csv')
+
+# mean difference table ----
 
 # rearrange for table
 
 # Extract rows
 tab <- tab_intensive_im
-# mean_row   <- tab["Mean Diff.", ]
-# std_row    <- tab["Std. Mean Diff.", ]
-mean_row   <- tab["Slope Diff.", ]
-std_row    <- tab["Std. Slope Diff.", ]
+mean_row   <- tab["Mean Diff.", ]
+std_row    <- tab["Std. Mean Diff.", ]
+# mean_row   <- tab["Slope Diff.", ]
+# std_row    <- tab["Std. Slope Diff.", ]
 pseudo_row <- tab["Pseudo-Rsq", ]
 
 # Get method names
@@ -701,24 +707,61 @@ out <- do.call(rbind, lapply(methods, function(m) {
 # Final formatting
 rownames(out) <- methods
 out <- as.data.frame(out)
-colnames(out) <- c("Diff", "SD", "Std. Diff", "SD", "Pseudo R²")
+colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 out
+
+es_intensive_im <- out
+# write.csv(es_intensive_im,file = '~/desktop/MNAR Results/es_intensive_im.csv')
+
+# diagnostics table ----
+
+extract_convergence <- function(object, method) {
+  
+  neff <- object@estimates[, "N_Eff"]
+  neff <- neff[is.finite(neff)]
+  
+  psr_row <- as.numeric(object@psr[20, ])
+  psr_row <- psr_row[is.finite(psr_row)]
+  
+  data.frame(
+    Min_Neff = round(min(neff),    0),
+    Max_Neff = round(max(neff),    0),
+    Min_PSR  = round(min(psr_row), 3),
+    Max_PSR  = round(max(psr_row), 3),
+    row.names = method
+  )
+}
+
+conv_intensive_im <- rbind(
+  extract_convergence(intensive_i_mar, "MAR"),
+  extract_convergence(intensive_i_wc, "WC"),
+  extract_convergence(intensive_i_wcq, "WCQ"),
+  extract_convergence(intensive_i_wcr, "WCR"),
+  extract_convergence(intensive_i_wcx, "WCX"),
+  extract_convergence(intensive_i_dk, "DK"),
+  extract_convergence(intensive_i_dkq, "DKQ"),
+  extract_convergence(intensive_i_dkr, "DKR"),
+  extract_convergence(intensive_i_dkx, "DKX"),
+  extract_convergence(intensive_i_dis, "DIS")
+)
+
+# write.csv(conv_intensive_im,file = '~/desktop/MNAR Results/conv_intensive_im.csv')
 
 
 #------------------------------------------------------------------------------#
 # FIGURE 3 OLD ----
 #------------------------------------------------------------------------------#
 
-figure3 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
-
-ggsave(
-  filename = "~/desktop/Figure 3. Time Related (Intensive IM).pdf",
-  plot = figure3,
-  width = 8.5,
-  height = 11,
-  units = "in"
-)
+# figure3 <- int_i_obs / int_i_lin / int_i_quad / int_i_dum
+# 
+# ggsave(
+#   filename = "~/desktop/Figure 3. Time Related (Intensive IM).pdf",
+#   plot = figure3,
+#   width = 8.5,
+#   height = 11,
+#   units = "in"
+# )
 
 
 
