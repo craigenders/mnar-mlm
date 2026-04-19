@@ -345,7 +345,7 @@ growth_d_wcr <- rblimp(
     alpha_res = alpha - (g0a + g1a*group);
     beta_res = beta - (g0b + g1b*group);
     d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha*d_res beta*d_res | intercept@0;
+    m ~ intercept@-3 alpha_res*d beta_res*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -441,7 +441,7 @@ growth_d_dkd <- rblimp(
     d = ifelse(time < 1, 0, 1);
     yw = y - (alpha + beta*time);
     lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 y*dw d*lagyw | intercept@0;
+    m ~ intercept@-3 yw*d lagyw*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -477,7 +477,7 @@ growth_d_dis <- rblimp(
     d = ifelse(time < 1, 0, 1);
     yw = y - (alpha + beta*time);
     lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 y*dw d*lagyw alpha*d beta*d | intercept@0;
+    m ~ intercept@-3 yw*d lagyw*d alpha*d beta*d | intercept@0;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -488,6 +488,39 @@ growth_d_dis <- rblimp(
 
 # print output
 output(growth_d_dis)
+
+growth_d_dis2 <- rblimp(
+  data = growth_d,
+  clusterid = 'l2id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'l2id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    d = ifelse(time < 1, 0, 1);
+    yw = y - (alpha + beta*time);
+    alpha_res = alpha - (g0a + g1a*group);
+    beta_res = beta - (g0b + g1b*group);
+    lagyw = y.lag - (alpha + beta*(time - 1));
+    m ~ intercept@-3 yw*d lagyw*d alpha_res*d beta_res*d | intercept@0;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+# print output
+output(growth_d_dis2)
 
 #------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
@@ -614,7 +647,7 @@ conv_growth_do <- rbind(
     extract_convergence(growth_d_dk, "DK"),
     extract_convergence(growth_d_dkq, "DKQ"),
     extract_convergence(growth_d_dkd, "DKD"),
-    extract_convergence(growth_d_dis, "DIS"),
+    extract_convergence(growth_d_dis, "DIS")
   )
 
 # write.csv(conv_growth_do,file = '~/desktop/MNAR Results/conv_growth_do.csv')

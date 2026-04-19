@@ -443,6 +443,9 @@ intensive_d_dk <- rblimp(
 # print output
 output(intensive_d_dk)
 
+set_blimp('/applications/blimp/blimp-nightly')
+set_blimp('/applications/blimp/blimp')
+
 # Model 7: Quadratic Diggle-Kenward Model ----
 intensive_d_dkq <- rblimp(
   data = intensive_d,

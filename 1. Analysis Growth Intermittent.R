@@ -565,6 +565,42 @@ growth_i_dis <- rblimp(
 # print output
 output(growth_i_dis)
 
+
+growth_i_dis2 <- rblimp(
+  data = growth_i,
+  clusterid = 'l2id',
+  timeid = 'time',
+  # dropout = 'm = y (missing)',
+  ordinal = 'm',
+  latent = 'l2id = alpha beta',
+  fixed = 'group time',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    yw = y - (alpha + beta*time);
+    lagyw = y.lag - (alpha + beta*(time - 1));
+    alpha_res = alpha - (g0a + g1a*group);
+    beta_res = beta - (g0b + g1b*group);
+    m ~ intercept group yw lagyw alpha_res beta_res | intercept;
+    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
+    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+  seed = 90291,
+  burn = 200000,
+  iter = 200000)
+
+# print output
+output(growth_i_dis2)
+
+
+
+
 #------------------------------------------------------------------------------#
 # FIGURE 1 ----
 #------------------------------------------------------------------------------#
@@ -614,7 +650,7 @@ extract_growth_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Intercept, Slope)",
     "Var(Residual)",
-    "Endpoint Mean Diff.",
+    "Mean Diff.",
     "Std. Mean Diff.",
     "Pseudo-Rsq"
   )
@@ -702,7 +738,7 @@ conv_growth_im <- rbind(
   extract_convergence(growth_i_dk, "DK"),
   extract_convergence(growth_i_dkq, "DKQ"),
   extract_convergence(growth_i_dkd, "DKD"),
-  extract_convergence(growth_i_dis, "DIS"),
+  extract_convergence(growth_i_dis, "DIS")
 )
 
 # write.csv(conv_growth_im,file = '~/desktop/MNAR Results/conv_growth_im.csv')
