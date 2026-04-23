@@ -51,8 +51,8 @@ growth_d_com <- rblimp(
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_com)
@@ -81,8 +81,8 @@ growth_d_mar <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_mar)
@@ -126,8 +126,8 @@ growth_d_tlin <- rblimp(
   ',
   seed = 90291,
   chains = 4,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_tlin)
@@ -152,8 +152,8 @@ growth_d_tquad <- rblimp(
     m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_tquad)
@@ -182,8 +182,8 @@ growth_d_tdum <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 10000,
-  iter = 10000)
+  burn = 20000,
+  iter = 20000)
 
 # print output
 output(growth_d_tdum)
@@ -326,7 +326,7 @@ growth_d_wcq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 100000,
+  burn = 200000,
   iter = 100000)
 
 # print output
@@ -359,7 +359,7 @@ growth_d_wcr <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 100000,
+  burn = 200000,
   iter = 100000)
 
 # print output
@@ -495,7 +495,7 @@ growth_d_dis <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 100000,
+  burn = 200000,
   iter = 100000)
 
 # print output
@@ -626,9 +626,32 @@ out <- do.call(rbind, lapply(methods, function(m) {
 # Final formatting
 rownames(out) <- methods
 out <- as.data.frame(out)
-colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
+# colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
-out
+iter_counts <- c(
+  MAR = nrow(growth_i_mar@iterations),
+  WC  = nrow(growth_i_wc@iterations),
+  WCQ = nrow(growth_i_wcq@iterations),
+  WCR = nrow(growth_i_wcr@iterations),
+  DK  = nrow(growth_i_dk@iterations),
+  DKQ = nrow(growth_i_dkq@iterations),
+  DKD = nrow(growth_i_dkd@iterations),
+  DIS = nrow(growth_i_dis@iterations)
+)
+
+# out$Iterations <- iter_counts[rownames(out)]
+
+out <- data.frame(
+  Mean_Diff     = out[, 1],
+  SD            = out[, 2],
+  gap1          = NA,
+  Std_Mean_Diff = out[, 3],
+  SD2           = out[, 4],
+  gap2          = NA,
+  Pseudo_R2     = out[, 5],
+  Iterations    = iter_counts[rownames(out)],
+  row.names     = rownames(out)
+)
 
 es_growth_do <- out
 # write.csv(es_growth_do,file = '~/desktop/MNAR Results/es_growth_do.csv')

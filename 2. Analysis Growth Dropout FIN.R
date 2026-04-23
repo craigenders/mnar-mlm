@@ -585,9 +585,32 @@ out <- do.call(rbind, lapply(methods, function(m) {
 # Final formatting
 rownames(out) <- methods
 out <- as.data.frame(out)
-colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
+# colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
-out
+iter_counts <- c(
+  MAR = nrow(growth_i_mar@iterations),
+  WC  = nrow(growth_i_wc@iterations),
+  WCQ = nrow(growth_i_wcq@iterations),
+  WCR = nrow(growth_i_wcr@iterations),
+  DK  = nrow(growth_i_dk@iterations),
+  DKQ = nrow(growth_i_dkq@iterations),
+  DKD = nrow(growth_i_dkd@iterations),
+  DIS = nrow(growth_i_dis@iterations)
+)
+
+# out$Iterations <- iter_counts[rownames(out)]
+
+out <- data.frame(
+  Mean_Diff     = out[, 1],
+  SD            = out[, 2],
+  gap1          = NA,
+  Std_Mean_Diff = out[, 3],
+  SD2           = out[, 4],
+  gap2          = NA,
+  Pseudo_R2     = out[, 5],
+  Iterations    = iter_counts[rownames(out)],
+  row.names     = rownames(out)
+)
 
 es_growth_do <- out
 # write.csv(es_growth_do,file = '~/desktop/MNAR Results/es_growth_do.csv')
