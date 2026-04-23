@@ -50,6 +50,7 @@ growth_d_com <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -79,6 +80,7 @@ growth_d_mar <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -123,6 +125,7 @@ growth_d_tlin <- rblimp(
     p4g1 = phi(-3 + b1*4 + b2*4*1);  # time=4, group=1
   ',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -148,6 +151,7 @@ growth_d_tquad <- rblimp(
     missingness:
     m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -177,6 +181,7 @@ growth_d_tdum <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -289,6 +294,7 @@ growth_d_wc <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -319,6 +325,7 @@ growth_d_wcq <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 100000,
   iter = 100000)
 
@@ -351,6 +358,7 @@ growth_d_wcr <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 100000,
   iter = 100000)
 
@@ -385,6 +393,7 @@ growth_d_dk <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -415,6 +424,7 @@ growth_d_dkq <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 40000,
   iter = 40000)
 
@@ -447,6 +457,7 @@ growth_d_dkd <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 200000,
   iter = 200000)
 
@@ -483,6 +494,7 @@ growth_d_dis <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 100000,
   iter = 100000)
 
@@ -516,6 +528,7 @@ growth_d_dis2 <- rblimp(
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
+  chains = 4,
   burn = 50000,
   iter = 50000)
 

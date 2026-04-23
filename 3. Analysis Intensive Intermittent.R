@@ -52,6 +52,7 @@ intensive_i_com <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -86,6 +87,7 @@ intensive_i_mar <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -106,6 +108,7 @@ icc_intensive_i <- rblimp(
   # dropout = 'm = y (missing)',
   model = 'm ~ intercept | intercept;',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -139,6 +142,7 @@ intensive_i_tlin <- rblimp(
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -168,6 +172,7 @@ intensive_i_tquad <- rblimp(
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -201,6 +206,7 @@ intensive_i_tdum <- rblimp(
     m ~ intercept group | intercept;
     { t in 1:19 } : m ~ (time == [t]);',
   seed = 90291,
+  chains = 4,
   burn = 10000,
   iter = 10000)
 
@@ -302,6 +308,7 @@ intensive_i_wc <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -337,6 +344,7 @@ intensive_i_wcq <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -373,6 +381,7 @@ intensive_i_wcr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -408,6 +417,7 @@ intensive_i_wcx <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -447,6 +457,7 @@ intensive_i_dk <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -482,6 +493,7 @@ intensive_i_dkq <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 50000,
   iter = 50000)
 
@@ -517,6 +529,7 @@ intensive_i_dkr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 75000,
   iter = 75000)
 
@@ -554,6 +567,7 @@ intensive_i_dkx <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 40000,
   iter = 40000)
 
@@ -593,6 +607,7 @@ intensive_i_dis <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 50000,
   iter = 50000)
 
@@ -790,6 +805,7 @@ conv_intensive_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion;',
 #   seed = 90291,
+  chains = 4,
 #   burn = 10000,
 #   iter = 10000,
 #   nimps = 20)
@@ -819,6 +835,7 @@ conv_intensive_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion occasion*u0i;',
 #   seed = 90291,
+  chains = 4,
 #   burn = 50000,
 #   iter = 50000,
 #   nimps = 20)

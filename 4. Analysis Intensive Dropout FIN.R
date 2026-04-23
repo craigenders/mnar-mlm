@@ -61,6 +61,7 @@ intensive_d_com <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -96,6 +97,7 @@ intensive_d_mar <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -128,6 +130,7 @@ intensive_d_tlin <- rblimp(
     d = ifelse(time < 7, 0, 1);
     m ~ intercept@-3 d group*d (time - 7)*d (time - 7)*group*d | intercept@0;',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000,
   nimps = 20)
@@ -157,6 +160,7 @@ intensive_d_tquad <- rblimp(
     d = ifelse(time < 7, 0, 1);
     m ~ intercept@-3 d group*d (time - 7)*d (time - 7)^2*d (time - 7)*group*d (time - 7)^2*group*d | intercept@0;',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000,
   nimps = 20)
@@ -187,6 +191,7 @@ intensive_d_tdum <- rblimp(
     m ~ intercept@-3 | intercept@0;
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -285,6 +290,7 @@ intensive_d_wc <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 75000,
   iter = 75000)
 
@@ -319,6 +325,7 @@ intensive_d_wcq <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 200000,
   iter = 200000)
 
@@ -354,6 +361,7 @@ intensive_d_wcr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 20000,
   iter = 20000)
 
@@ -389,6 +397,7 @@ intensive_d_wcx <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 200000,
   iter = 200000)
 
@@ -427,6 +436,7 @@ intensive_d_dk <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 30000,
   iter = 30000)
 
@@ -461,6 +471,7 @@ intensive_d_dkq <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 125000,
   iter = 125000)
 
@@ -495,6 +506,7 @@ intensive_d_dkr <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 50000,
   iter = 50000)
 
@@ -530,6 +542,7 @@ intensive_d_dkx <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 30000,
   iter = 30000)
 
@@ -571,6 +584,7 @@ intensive_d_dis <- rblimp(
     bdiff = g1b; 
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
+  chains = 4,
   burn = 200000,
   iter = 200000)
 
