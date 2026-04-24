@@ -1,3 +1,6 @@
+# min(intensive_d_dk@estimates[,7], na.rm = T)
+# rownames(intensive_d_dk@estimates)[which.min(intensive_d_dk@estimates[,7])]
+
 #------------------------------------------------------------------------------#
 # LOAD R PACKAGES ----
 #------------------------------------------------------------------------------#
@@ -53,8 +56,8 @@ intensive_i_com <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_com)
@@ -88,8 +91,8 @@ intensive_i_mar <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_mar)
@@ -109,8 +112,8 @@ icc_intensive_i <- rblimp(
   model = 'm ~ intercept | intercept;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(icc_intensive_i)
@@ -143,8 +146,8 @@ intensive_i_tlin <- rblimp(
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_tlin)
@@ -173,8 +176,8 @@ intensive_i_tquad <- rblimp(
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_tquad)
@@ -207,8 +210,8 @@ intensive_i_tdum <- rblimp(
     { t in 1:19 } : m ~ (time == [t]);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_tdum)
@@ -309,8 +312,8 @@ intensive_i_wc <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_wc)
@@ -345,8 +348,8 @@ intensive_i_wcq <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_wcq)
@@ -382,8 +385,8 @@ intensive_i_wcr <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_wcr)
@@ -418,8 +421,8 @@ intensive_i_wcx <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_wcx)
@@ -458,8 +461,8 @@ intensive_i_dk <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_i_dk)
@@ -568,8 +571,8 @@ intensive_i_dkx <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 40000,
-  iter = 40000)
+  burn = 50000,
+  iter = 50000)
 
 # print output
 output(intensive_i_dkx)
@@ -608,8 +611,8 @@ intensive_i_dis <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 50000,
-  iter = 50000)
+  burn = 75000,
+  iter = 75000)
 
 # print output
 output(intensive_i_dis)
@@ -725,14 +728,14 @@ out <- as.data.frame(out)
 # colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 iter_counts <- c(
-  MAR = nrow(growth_i_mar@iterations),
-  WC  = nrow(growth_i_wc@iterations),
-  WCQ = nrow(growth_i_wcq@iterations),
-  WCR = nrow(growth_i_wcr@iterations),
-  DK  = nrow(growth_i_dk@iterations),
-  DKQ = nrow(growth_i_dkq@iterations),
-  DKD = nrow(growth_i_dkd@iterations),
-  DIS = nrow(growth_i_dis@iterations)
+  MAR = nrow(intensive_i_mar@iterations),
+  WC  = nrow(intensive_i_wc@iterations),
+  WCQ = nrow(intensive_i_wcq@iterations),
+  WCR = nrow(intensive_i_wcr@iterations),
+  DK  = nrow(intensive_i_dk@iterations),
+  DKQ = nrow(intensive_i_dkq@iterations),
+  DKD = nrow(intensive_i_dkd@iterations),
+  DIS = nrow(intensive_i_dis@iterations)
 )
 
 # out$Iterations <- iter_counts[rownames(out)]
@@ -763,8 +766,8 @@ extract_convergence <- function(object, method) {
   psr_row <- psr_row[is.finite(psr_row)]
   
   data.frame(
-    Min_Neff = round(min(neff),    0),
-    Max_Neff = round(max(neff),    0),
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
     Min_PSR  = round(min(psr_row), 3),
     Max_PSR  = round(max(psr_row), 3),
     row.names = method
@@ -828,8 +831,8 @@ conv_intensive_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion;',
 #   seed = 90291,
-  chains = 4,
-#   burn = 20000,
+  # chains = 4,
+#   burn = 25000,
 #   iter = 10000,
 #   nimps = 20)
 # 
@@ -858,7 +861,7 @@ conv_intensive_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion occasion*u0i;',
 #   seed = 90291,
-  chains = 4,
+  # chains = 4,
 #   burn = 50000,
 #   iter = 50000,
 #   nimps = 20)

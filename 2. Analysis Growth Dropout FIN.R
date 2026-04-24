@@ -9,10 +9,6 @@ library(ggplot2)
 library(patchwork)
 library(rblimp)
 
-# set_blimp('/applications/blimp/blimp')
-# set_blimp('/applications/blimp/blimp-nightly')
-# remotes::update_packages('rblimp')
-
 #------------------------------------------------------------------------------#
 # READ DATA ----
 #------------------------------------------------------------------------------#
@@ -26,46 +22,16 @@ growth_d <- read.csv(filepath1, stringsAsFactors = T)
 # rename hard coded indicator
 names(growth_d)[names(growth_d) == "m"] <- "m_"
 
-# growth_comp <- growth_d
-# growth_d <- growth_d[!is.na(growth_d$m),]
-
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
-# COMPLETE DATA ----
-#------------------------------------------------------------------------------#
-
-growth_d_com <- rblimp(
-  data = growth_d,
-  clusterid = 'l2id', 
-  latent = 'l2id = alpha beta',
-  fixed = 'group time',
-  model = '
-    level2:
-    alpha ~ intercept@g0a group@g1a;
-    beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
-    level1:
-    ycom ~ intercept@alpha time@beta;',
-  parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
-  seed = 90291,
-  chains = 4,
-  burn = 20000,
-  iter = 20000)
-
-# print output
-output(growth_d_com)
-
-#------------------------------------------------------------------------------#
 # CMAR ----
 #------------------------------------------------------------------------------#
 
-# Model 1: CMAR ----
-growth_d_mar <- rblimp(
+# MODEL 1: CMAR ----
+growth_do_mar <- rblimp(
   data = growth_d,
   clusterid = 'l2id', 
   timeid = 'time',
@@ -85,18 +51,18 @@ growth_d_mar <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_mar)
+output(growth_do_mar)
 
 #------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES ----
 #------------------------------------------------------------------------------#
 
 # linear trend
-growth_d_tlin <- rblimp(
+growth_do_timelin <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -128,14 +94,14 @@ growth_d_tlin <- rblimp(
   ',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_tlin)
+output(growth_do_timelin)
 
 # quadratic trend
-growth_d_tquad <- rblimp(
+growth_do_timequad <- rblimp(
   data = growth_d,
   clusterid = 'l2id', 
   timeid = 'time',
@@ -153,14 +119,14 @@ growth_d_tquad <- rblimp(
     m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_tquad)
+output(growth_do_timequad)
 
 # dummy coded time
-growth_d_tdum <- rblimp(
+growth_do_timedum <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -182,11 +148,11 @@ growth_d_tdum <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_tdum)
+output(growth_do_timedum)
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES ----
@@ -195,83 +161,71 @@ output(growth_d_tdum)
 ymax <- .5
 ymin <- 0
 
-gro_d_obs <- plot_means(m ~ time | group, 
-                      model = growth_d_tdum,
-                      ylab = "Probability",
-                      title = "A. Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+# plot observed and predicted probabilities
+pgrowth_do_obs <- plot_means(m ~ time | group, 
+    model = growth_do_timedum,
+    ylab = "Probability",
+    title = "Observed Probabilities",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-gro_d_dum <- plot_means(m.1.probability ~ time | group, 
-           model = growth_d_tdum,
-           ylab = "Probability",
-           title = "G. Dummy Coded Time",
-           group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+pgrowth_do_dum <- plot_means(m.1.probability ~ time | group, 
+    model = growth_do_timedum,
+    ylab = "Probability",
+    title = "Dummy Coded Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-gro_d_lin <- plot_means(m.1.probability ~ time | group, 
-                      model = growth_d_tlin,
-                      ylab = "Probability",
-                      title = "C. Linear Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+pgrowth_do_lin <- plot_means(m.1.probability ~ time | group, 
+    model = growth_do_timelin,
+    ylab = "Probability",
+    title = "Linear Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-gro_d_quad <- plot_means(m.1.probability ~ time | group, 
-                      model = growth_d_tquad,
-                      ylab = "Probability",
-                      title = "E. Quadratic Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+pgrowth_do_quad <- plot_means(m.1.probability ~ time | group, 
+    model = growth_do_timequad,
+    ylab = "Probability",
+    title = "Quadratic Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-gro_d_obs; gro_d_dum; gro_d_lin; gro_d_quad
+pgrowth_do_obs
+pgrowth_do_dum
+pgrowth_do_lin
+pgrowth_do_quad
 
 # compute marginal probabilities (average individual probabilities) by time and group
-pmiss_growth_d_obs <- aggregate(m ~ time + group, data = growth_d_tdum@average_imp, mean)
-pmiss_growth_d_tdum <- aggregate(m.1.probability ~ time + group, data = growth_d_tdum@average_imp, mean)
-pmiss_growth_d_tlin <- aggregate(m.1.probability ~ time + group, data = growth_d_tlin@average_imp, mean)
-pmiss_growth_d_tquad <- aggregate(m.1.probability ~ time + group, data = growth_d_tquad@average_imp, mean)
+pmiss_growth_do_obs <- aggregate(m ~ time + group, data = growth_do_timedum@average_imp, mean)
+pmiss_growth_do_timedum <- aggregate(m.1.probability ~ time + group, data = growth_do_timedum@average_imp, mean)
+pmiss_growth_do_timelin <- aggregate(m.1.probability ~ time + group, data = growth_do_timelin@average_imp, mean)
+pmiss_growth_do_timequad <- aggregate(m.1.probability ~ time + group, data = growth_do_timequad@average_imp, mean)
 
 # compute rmse of marginal vs. observed probabilities
-rmse_gro_d_tdum <- sqrt(mean((pmiss_growth_d_tdum$m.1.probability - pmiss_growth_d_obs$m)^2))
-rmse_gro_d_tlin <- sqrt(mean((pmiss_growth_d_tlin$m.1.probability - pmiss_growth_d_obs$m)^2))
-rmse_gro_d_tquad <- sqrt(mean((pmiss_growth_d_tquad$m.1.probability - pmiss_growth_d_obs$m)^2))
-rmse_gro_d_tdum; rmse_gro_d_tlin; rmse_gro_d_tquad
+rmse_growth_do_timedum <- sqrt(mean((pmiss_growth_do_timedum$m.1.probability - pmiss_growth_do_obs$m)^2))
+rmse_growth_do_timelin <- sqrt(mean((pmiss_growth_do_timelin$m.1.probability - pmiss_growth_do_obs$m)^2))
+rmse_growth_do_timequad <- sqrt(mean((pmiss_growth_do_timequad$m.1.probability - pmiss_growth_do_obs$m)^2))
+rmse_growth_do_timedum; rmse_growth_do_timelin; rmse_growth_do_timequad
 
 # summarize difference between marginal vs. observed probabilities
-summary(pmiss_growth_d_tdum$m.1.probability - pmiss_growth_d_obs$m)
-summary(pmiss_growth_d_tlin$m.1.probability - pmiss_growth_d_obs$m)
-summary(pmiss_growth_d_tquad$m.1.probability - pmiss_growth_d_obs$m)
-
-#------------------------------------------------------------------------------#
-# FIGURE 4 ----
-#------------------------------------------------------------------------------#
-
-# fig4col1 <- gro_d_obs / gro_d_lin / gro_d_quad / gro_d_dum
-# fig4col2 <- int_d_obs / int_d_lin / int_d_quad / int_d_dum
-# figure4 <- fig4col1 | fig4col2
-# 
-# ggsave(
-#   filename = "~/desktop/Figure 4. Time Related (DO).pdf",
-#   plot = figure4,
-#   width = 8.5,
-#   height = 11,
-#   units = "in"
-# )
+summary(pmiss_growth_do_timedum$m.1.probability - pmiss_growth_do_obs$m)
+summary(pmiss_growth_do_timelin$m.1.probability - pmiss_growth_do_obs$m)
+summary(pmiss_growth_do_timequad$m.1.probability - pmiss_growth_do_obs$m)
 
 #------------------------------------------------------------------------------#
 # SHARED PARAMETER MODEL ----
 #------------------------------------------------------------------------------#
 
-# Model 2: Shared Parameter Model ----
-growth_d_wc <- rblimp(
+# MODEL 2: Shared Parameter Model ----
+growth_do_sp <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -294,14 +248,14 @@ growth_d_wc <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_wc)
+output(growth_do_sp)
 
-# Model 3: Quadratic Shared Parameter Model ----
-growth_d_wcq <- rblimp(
+# MODEL 3: Quadratic Shared Parameter Model ----
+growth_do_spq <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -324,14 +278,14 @@ growth_d_wcq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 200000,
-  iter = 200000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_wcq)
+output(growth_do_spq)
 
-# Model 4: Residualized Shared Parameter Model ----
-growth_d_wcr <- rblimp(
+# MODEL 4: Residual Shared Parameter Model ----
+growth_do_spr <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -360,14 +314,14 @@ growth_d_wcr <- rblimp(
   iter = 200000)
 
 # print output
-output(growth_d_wcr)
+output(growth_do_spr)
 
 #------------------------------------------------------------------------------#
 # SELECTION MODEL ----
 #------------------------------------------------------------------------------#
 
-# Model 5: Diggle-Kenward Model ----
-growth_d_dk <- rblimp(
+# MODEL 5: Diggle-Kenward Model ----
+growth_do_dk <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -390,14 +344,14 @@ growth_d_dk <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(growth_d_dk)
+output(growth_do_dk)
 
-# Model 6: Quadratic Diggle-Kenward Model ----
-growth_d_dkq <- rblimp(
+# MODEL 6: Quadratic Diggle-Kenward Model ----
+growth_do_dkq <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -420,14 +374,14 @@ growth_d_dkq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 40000,
-  iter = 40000)
+  burn = 50000,
+  iter = 50000)
 
 # print output
-output(growth_d_dkq)
+output(growth_do_dkq)
 
-# Model 7: Residual Diggle-Kenward Model ----
-growth_d_dkd <- rblimp(
+# MODEL 7: Residual Diggle-Kenward Model ----
+growth_do_dkd <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -456,14 +410,14 @@ growth_d_dkd <- rblimp(
   iter = 200000)
 
 # print output
-output(growth_d_dkd)
+output(growth_do_dkd)
 
 #------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-# Model 8: Disaggregated Model ----
-growth_d_dis <- rblimp(
+# MODEL 8: Disaggregated Model ----
+growth_do_dis <- rblimp(
   data = growth_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -488,11 +442,11 @@ growth_d_dis <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 200000,
-  iter = 200000)
+  burn = 100000,
+  iter = 100000)
 
 # print output
-output(growth_d_dis)
+output(growth_do_dis)
 
 #------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
@@ -543,24 +497,20 @@ extract_growth_params <- function(object, method) {
 
 # main summary table ----
 
-# com_tab <- extract_growth_d_params(growth_d_com, "COM")
-mar_tab <- extract_growth_params(growth_d_mar, "MAR")
-wc_tab  <- extract_growth_params(growth_d_wc, "WC")
-wcq_tab <- extract_growth_params(growth_d_wcq, "WCQ")
-wcr_tab <- extract_growth_params(growth_d_wcr, "WCR")
-dk_tab  <- extract_growth_params(growth_d_dk, "DK")
-dkq_tab <- extract_growth_params(growth_d_dkq, "DKQ")
-dkd_tab <- extract_growth_params(growth_d_dkd, "DKD")
-dis_tab <- extract_growth_params(growth_d_dis, "DIS")
+mar_tab <- extract_growth_params(growth_do_mar, "MAR")
+sp_tab  <- extract_growth_params(growth_do_sp, "SP")
+spq_tab <- extract_growth_params(growth_do_spq, "SPQ")
+spr_tab <- extract_growth_params(growth_do_spr, "SPR")
+dk_tab  <- extract_growth_params(growth_do_dk, "DK")
+dkq_tab <- extract_growth_params(growth_do_dkq, "DKQ")
+dkd_tab <- extract_growth_params(growth_do_dkd, "DKD")
+dis_tab <- extract_growth_params(growth_do_dis, "DIS")
 
-tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
+tab <- cbind(mar_tab,sp_tab,spq_tab,spr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
 tab_growth_do <- tab
-
-# write.csv(tab_growth_do,file = '~/desktop/MNAR Results/tab_growth_do.csv')
+tab_growth_do
 
 # mean difference table ----
-
-# rearrange for table
 
 # Extract rows
 mean_row   <- tab["Mean Diff.", ]
@@ -585,20 +535,17 @@ out <- do.call(rbind, lapply(methods, function(m) {
 # Final formatting
 rownames(out) <- methods
 out <- as.data.frame(out)
-# colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 iter_counts <- c(
-  MAR = nrow(growth_i_mar@iterations),
-  WC  = nrow(growth_i_wc@iterations),
-  WCQ = nrow(growth_i_wcq@iterations),
-  WCR = nrow(growth_i_wcr@iterations),
-  DK  = nrow(growth_i_dk@iterations),
-  DKQ = nrow(growth_i_dkq@iterations),
-  DKD = nrow(growth_i_dkd@iterations),
-  DIS = nrow(growth_i_dis@iterations)
+  MAR = nrow(growth_do_mar@iterations),
+  SP  = nrow(growth_do_sp@iterations),
+  SPQ = nrow(growth_do_spq@iterations),
+  SPR = nrow(growth_do_spr@iterations),
+  DK  = nrow(growth_do_dk@iterations),
+  DKQ = nrow(growth_do_dkq@iterations),
+  DKD = nrow(growth_do_dkd@iterations),
+  DIS = nrow(growth_do_dis@iterations)
 )
-
-# out$Iterations <- iter_counts[rownames(out)]
 
 out <- data.frame(
   Mean_Diff     = out[, 1],
@@ -613,7 +560,7 @@ out <- data.frame(
 )
 
 es_growth_do <- out
-# write.csv(es_growth_do,file = '~/desktop/MNAR Results/es_growth_do.csv')
+es_growth_do
 
 # diagnostics table ----
 
@@ -626,8 +573,8 @@ extract_convergence <- function(object, method) {
   psr_row <- psr_row[is.finite(psr_row)]
   
   data.frame(
-    Min_Neff = round(min(neff),    0),
-    Max_Neff = round(max(neff),    0),
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
     Min_PSR  = round(min(psr_row), 3),
     Max_PSR  = round(max(psr_row), 3),
     row.names = method
@@ -635,69 +582,15 @@ extract_convergence <- function(object, method) {
 }
 
 conv_growth_do <- rbind(
-    extract_convergence(growth_d_mar, "MAR"),
-    extract_convergence(growth_d_wc, "WC"),
-    extract_convergence(growth_d_wcq, "WCQ"),
-    extract_convergence(growth_d_wcr, "WCR"),
-    extract_convergence(growth_d_dk, "DK"),
-    extract_convergence(growth_d_dkq, "DKQ"),
-    extract_convergence(growth_d_dkd, "DKD"),
-    extract_convergence(growth_d_dis, "DIS")
-  )
+  extract_convergence(growth_do_mar, "MAR"),
+  extract_convergence(growth_do_sp, "SP"),
+  extract_convergence(growth_do_spq, "SPQ"),
+  extract_convergence(growth_do_spr, "SPR"),
+  extract_convergence(growth_do_dk, "DK"),
+  extract_convergence(growth_do_dkq, "DKQ"),
+  extract_convergence(growth_do_dkd, "DKD"),
+  extract_convergence(growth_do_dis, "DIS")
+)
 
-# write.csv(conv_growth_do,file = '~/desktop/MNAR Results/conv_growth_do.csv')
-
-
-
-
-#------------------------------------------------------------------------------#
-# PLOT GROWTH CURVES ----
-#------------------------------------------------------------------------------#
-
-# p_gro_d_mar <- plot_means(y.predicted ~ time | group,
-#                       model = growth_d_mar,
-#                       ylab = "Y",
-#                       title = "MAR Model-Implied Means (Growth Data)",
-#                       group_labels = c("0" = "0", "1" = "1"),
-#                       use_latent_growth = TRUE) + ylim(0, 7)
-
-# p_gro_d_dum <- plot_means(y.predicted ~ time | group, 
-#                       model = growth_d_tdum,
-#                       ylab = "Y",
-#                       title = "Time Dummy Model-Implied Means (Growth Data)",
-#                       group_labels = c("0" = "0", "1" = "1"),
-#                       use_latent_growth = TRUE) + ylim(0, 7)
-# 
-# p_gro_d_wcl <- plot_means(y.predicted ~ time | group, 
-#                         model = growth_d_wcl,
-#                         ylab = "Y",
-#                         title = "W-C Model-Implied Means (Growth Data)",
-#                         group_labels = c("0" = "0", "1" = "1"),
-#                         use_latent_growth = TRUE) + ylim(0, 7)
-# 
-# p_gro_d_wcr <- plot_means(y.predicted ~ time | group, 
-#                      model = growth_d_wcr,
-#                      ylab = "Y",
-#                      title = "Res W-C Model-Implied Means (Growth Data)",
-#                      group_labels = c("0" = "0", "1" = "1"),
-#                      use_latent_growth = TRUE) + ylim(0, 7)
-# 
-# p_gro_d_dky <- plot_means(y.predicted ~ time | group, 
-#                         model = growth_d_dky,
-#                         ylab = "Y",
-#                         title = "W-C Model-Implied Means (Growth Data)",
-#                         group_labels = c("0" = "0", "1" = "1"),
-#                         use_latent_growth = TRUE) + ylim(0, 7)
-# 
-# p_gro_d_dkr <- plot_means(y.predicted ~ time | group, 
-#                         model = growth_d_dkr,
-#                         ylab = "Y",
-#                         title = "Res W-C Model-Implied Means (Growth Data)",
-#                         group_labels = c("0" = "0", "1" = "1"),
-#                         use_latent_growth = TRUE) + ylim(0, 7)
-# 
-# p_gro_d_mar; p_gro_d_dum; p_gro_d_wcl; p_gro_d_wcr; p_gro_d_dky; p_gro_d_dkr
-# 
-
-
+conv_growth_do
 

@@ -51,8 +51,8 @@ growth_i_com <- rblimp(
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_com)
@@ -80,8 +80,8 @@ growth_i_mar <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_mar)
@@ -101,8 +101,8 @@ icc_growth_i <- rblimp(
   model = 'm ~ intercept | intercept;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(icc_growth_i)
@@ -132,8 +132,8 @@ growth_i_tlin <- rblimp(
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_tlin)
@@ -159,8 +159,8 @@ growth_i_tquad <- rblimp(
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_tquad)
@@ -190,8 +190,8 @@ growth_i_tdum <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_tdum)
@@ -309,8 +309,8 @@ growth_i_wc <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_wc)
@@ -340,8 +340,8 @@ growth_i_wcq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_wcq)
@@ -373,8 +373,8 @@ growth_i_wcr <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_wcr)
@@ -407,8 +407,8 @@ growth_i_dk <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_dk)
@@ -438,8 +438,8 @@ growth_i_dk_noprior <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_dk_noprior)
@@ -468,8 +468,8 @@ growth_i_dkq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_i_dkq)
@@ -762,8 +762,8 @@ extract_convergence <- function(object, method) {
   psr_row <- psr_row[is.finite(psr_row)]
   
   data.frame(
-    Min_Neff = round(min(neff),    0),
-    Max_Neff = round(max(neff),    0),
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
     Min_PSR  = round(min(psr_row), 3),
     Max_PSR  = round(max(psr_row), 3),
     row.names = method
@@ -858,8 +858,8 @@ conv_growth_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion;',
 #   seed = 90291,
-  chains = 4,
-#   burn = 20000,
+  # chains = 4,
+#   burn = 25000,
 #   iter = 10000,
 #   nimps = 20)
 # 
@@ -888,7 +888,7 @@ conv_growth_im <- rbind(
 #     u0i ~ intercept;
 #     m ~ intercept@u0i occasion occasion*u0i;',
 #   seed = 90291,
-  chains = 4,
+  # chains = 4,
 #   burn = 50000,
 #   iter = 50000,
 #   nimps = 20)
@@ -918,7 +918,7 @@ conv_growth_im <- rbind(
 #     u0i ~ intercept@0;
 #     m ~ intercept occasion u0i@1 occasion*u0i | intercept@0;',
 #   seed = 90291,
-  chains = 4,
+  # chains = 4,
 #   burn = 50000,
 #   iter = 50000,
 #   nimps = 20)

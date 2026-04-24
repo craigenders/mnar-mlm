@@ -1,3 +1,6 @@
+# min(intensive_d_dk@estimates[,7], na.rm = T)
+# rownames(intensive_d_dk@estimates)[which.min(intensive_d_dk@estimates[,7])]
+
 #------------------------------------------------------------------------------#
 # LOAD R PACKAGES ----
 #------------------------------------------------------------------------------#
@@ -59,8 +62,8 @@ intensive_d_com <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_d_com)
@@ -93,8 +96,8 @@ intensive_d_mar <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_d_mar)
@@ -128,7 +131,7 @@ intensive_d_tlin <- rblimp(
     m ~ intercept@-3 d group*d (time - 7)*d (time - 7)*group*d | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
+  burn = 25000,
   iter = 20000,
   nimps = 20)
 
@@ -160,7 +163,7 @@ intensive_d_tquad <- rblimp(
     m ~ intercept@-3 d group*d (time - 7)*d (time - 7)^2*d (time - 7)*group*d (time - 7)^2*group*d | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
+  burn = 25000,
   iter = 20000,
   nimps = 20)
 
@@ -192,8 +195,8 @@ intensive_d_tdum <- rblimp(
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_d_tdum)
@@ -368,8 +371,8 @@ intensive_d_wcr <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_d_wcr)
@@ -447,14 +450,11 @@ intensive_d_dk <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 30000,
-  iter = 30000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_d_dk)
-
-set_blimp('/applications/blimp/blimp-nightly')
-set_blimp('/applications/blimp/blimp')
 
 # Model 7: Quadratic Diggle-Kenward Model ----
 intensive_d_dkq <- rblimp(
@@ -487,8 +487,8 @@ intensive_d_dkq <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 125000,
-  iter = 125000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(intensive_d_dkq)
@@ -524,11 +524,14 @@ intensive_d_dkr <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 50000,
-  iter = 50000)
+  burn = 75000,
+  iter = 75000)
 
 # print output
 output(intensive_d_dkr)
+
+min(intensive_d_dkr@estimates[,7], na.rm = T)
+rownames(intensive_d_dkr@estimates)[which.min(intensive_d_dkr@estimates[,7])]
 
 # Model 9: Diggle-Kenward Model With X and Lag(X) ----
 intensive_d_dkx <- rblimp(
@@ -563,8 +566,8 @@ intensive_d_dkx <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 30000,
-  iter = 30000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(intensive_d_dkx)
@@ -724,14 +727,14 @@ out <- as.data.frame(out)
 # colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 iter_counts <- c(
-  MAR = nrow(growth_i_mar@iterations),
-  WC  = nrow(growth_i_wc@iterations),
-  WCQ = nrow(growth_i_wcq@iterations),
-  WCR = nrow(growth_i_wcr@iterations),
-  DK  = nrow(growth_i_dk@iterations),
-  DKQ = nrow(growth_i_dkq@iterations),
-  DKD = nrow(growth_i_dkd@iterations),
-  DIS = nrow(growth_i_dis@iterations)
+  MAR = nrow(intensive_d_mar@iterations),
+  WC  = nrow(intensive_d_wc@iterations),
+  WCQ = nrow(intensive_d_wcq@iterations),
+  WCR = nrow(intensive_d_wcr@iterations),
+  DK  = nrow(intensive_d_dk@iterations),
+  DKQ = nrow(intensive_d_dkq@iterations),
+  DKD = nrow(intensive_d_dkd@iterations),
+  DIS = nrow(intensive_d_dis@iterations)
 )
 
 # out$Iterations <- iter_counts[rownames(out)]
@@ -763,8 +766,8 @@ extract_convergence <- function(object, method) {
   psr_row <- psr_row[is.finite(psr_row)]
   
   data.frame(
-    Min_Neff = round(min(neff),    0),
-    Max_Neff = round(max(neff),    0),
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
     Min_PSR  = round(min(psr_row), 3),
     Max_PSR  = round(max(psr_row), 3),
     row.names = method

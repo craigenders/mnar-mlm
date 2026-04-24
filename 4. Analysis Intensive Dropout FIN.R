@@ -9,10 +9,6 @@ library(ggplot2)
 library(patchwork)
 library(rblimp)
 
-# set_blimp('/applications/blimp/blimp')
-# set_blimp('/applications/blimp/blimp-nightly')
-# remotes::update_packages('rblimp')
-
 #------------------------------------------------------------------------------#
 # READ DATA ----
 #------------------------------------------------------------------------------#
@@ -26,54 +22,16 @@ intensive_d <- read.csv(filepath, stringsAsFactors = T)
 # rename hard coded indicator
 names(intensive_d)[names(intensive_d) == "m"] <- "m_"
 
-# intensive_d_comp <- intensive_d
-
-# intensive_d$y[is.na(intensive_d$m)] <- NA
-# intensive_d$x[is.na(intensive_d$m)] <- NA
-# intensive_d <- intensive_d[!is.na(intensive_d$m),]
-
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
-# COMPLETE DATA ----
-#------------------------------------------------------------------------------#
-
-intensive_d_com <- rblimp(
-  data = intensive_d,
-  clusterid = 'l2id', 
-  latent = 'l2id = alpha beta omega',
-  fixed = 'group time',
-  center = 'groupmean = xcom',
-  model = '
-    level2:
-    alpha ~ intercept@g0a group@g1a;
-    beta ~ intercept@g0b group@g1b;
-    omega ~ intercept@g0o;
-    alpha beta omega ~~ alpha beta omega;
-    level1:
-    ycom ~ intercept@alpha xcom@beta;
-    var(ycom) ~ intercept@omega;',
-  parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
-  seed = 90291,
-  chains = 4,
-  burn = 20000,
-  iter = 20000)
-
-# print output
-output(intensive_d_com)
-
-#------------------------------------------------------------------------------#
 # CMAR ----
 #------------------------------------------------------------------------------#
 
-# Model 1: CMAR ----
-intensive_d_mar <- rblimp(
+# MODEL 1: CMAR ----
+intensive_do_mar <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
   timeid = 'time',
@@ -98,18 +56,18 @@ intensive_d_mar <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(intensive_d_mar)
+output(intensive_do_mar)
 
 #------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
 # linear trend ----
-intensive_d_tlin <- rblimp(
+intensive_do_timelin <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
   timeid = 'time',
@@ -131,15 +89,15 @@ intensive_d_tlin <- rblimp(
     m ~ intercept@-3 d group*d (time - 7)*d (time - 7)*group*d | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
+  burn = 25000,
   iter = 20000,
   nimps = 20)
 
 # print output
-output(intensive_d_tlin)
+output(intensive_do_timelin)
 
 # quadratic trend ----
-intensive_d_tquad <- rblimp(
+intensive_do_timequad <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
   timeid = 'time',
@@ -161,15 +119,15 @@ intensive_d_tquad <- rblimp(
     m ~ intercept@-3 d group*d (time - 7)*d (time - 7)^2*d (time - 7)*group*d (time - 7)^2*group*d | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
+  burn = 25000,
   iter = 20000,
   nimps = 20)
 
 # print output
-output(intensive_d_tquad)
+output(intensive_do_timequad)
 
 # dummy-coded time ----
-intensive_d_tdum <- rblimp(
+intensive_do_timedum <- rblimp(
   data = intensive_d,
   clusterid = 'l2id', 
   timeid = 'time',
@@ -192,11 +150,11 @@ intensive_d_tdum <- rblimp(
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(intensive_d_tdum)
+output(intensive_do_timedum)
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
@@ -205,65 +163,69 @@ output(intensive_d_tdum)
 ymax <- .15
 ymin <- 0
 
-int_d_obs <- plot_means(m ~ time | group, 
-                      model = intensive_d_tdum,
-                      ylab = "Probability",
-                      title = "B. Observed Probabilities",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+# plot observed and predicted probabilities
+pintensive_do_obs <- plot_means(m ~ time | group, 
+    model = intensive_do_timedum,
+    ylab = "Probability",
+    title = "Observed Probabilities",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-int_d_dum <- plot_means(m.1.probability ~ time | group, 
-                      model = intensive_d_tdum,
-                      ylab = "Probability",
-                      title = "H. Dummy Coded Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+pintensive_do_dum <- plot_means(m.1.probability ~ time | group, 
+    model = intensive_do_timedum,
+    ylab = "Probability",
+    title = "Dummy Coded Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-int_d_lin <- plot_means(m.1.probability ~ time | group, 
-                      model = intensive_d_tlin,
-                      ylab = "Probability",
-                      title = "D. Linear Time",
-                      group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+pintensive_do_lin <- plot_means(m.1.probability ~ time | group, 
+    model = intensive_do_timelin,
+    ylab = "Probability",
+    title = "Linear Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-int_d_quad <- plot_means(m.1.probability ~ time | group, 
-                       model = intensive_d_tquad,
-                       ylab = "Probability",
-                       title = "F. Quadratic Time",
-                       group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-  theme(legend.position = "top",legend.justification = "center") +
-  scale_linetype_manual(values = c("dashed", "solid")) +
-  geom_line(linewidth = .25)
+pintensive_do_quad <- plot_means(m.1.probability ~ time | group, 
+    model = intensive_do_timequad,
+    ylab = "Probability",
+    title = "Quadratic Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
 # compute marginal probabilities (average individual probabilities) by time and group
-pmiss_intensive_d_obs <- aggregate(m ~ time + group, data = intensive_d_tdum@average_imp, mean)
-pmiss_intensive_d_tdum <- aggregate(m.1.probability ~ time + group, data = intensive_d_tdum@average_imp, mean)
-pmiss_intensive_d_tlin <- aggregate(m.1.probability ~ time + group, data = intensive_d_tlin@average_imp, mean)
-pmiss_intensive_d_tquad <- aggregate(m.1.probability ~ time + group, data = intensive_d_tquad@average_imp, mean)
+pmiss_intensive_do_obs <- aggregate(m ~ time + group, data = intensive_do_timedum@average_imp, mean)
+pmiss_intensive_do_timedum <- aggregate(m.1.probability ~ time + group, data = intensive_do_timedum@average_imp, mean)
+pmiss_intensive_do_timelin <- aggregate(m.1.probability ~ time + group, data = intensive_do_timelin@average_imp, mean)
+pmiss_intensive_do_timequad <- aggregate(m.1.probability ~ time + group, data = intensive_do_timequad@average_imp, mean)
 
 # compute rmse of marginal vs. observed probabilities
-rmse_int_d_tdum <- sqrt(mean((pmiss_intensive_d_tdum$m.1.probability - pmiss_intensive_d_obs$m)^2))
-rmse_int_d_tlin <- sqrt(mean((pmiss_intensive_d_tlin$m.1.probability - pmiss_intensive_d_obs$m)^2))
-rmse_int_d_tquad <- sqrt(mean((pmiss_intensive_d_tquad$m.1.probability - pmiss_intensive_d_obs$m)^2))
-rmse_int_d_tdum; rmse_int_d_tlin; rmse_int_d_tquad
+rmse_intensive_do_timedum <- sqrt(mean((pmiss_intensive_do_timedum$m.1.probability - pmiss_intensive_do_obs$m)^2))
+rmse_intensive_do_timelin <- sqrt(mean((pmiss_intensive_do_timelin$m.1.probability - pmiss_intensive_do_obs$m)^2))
+rmse_intensive_do_timequad <- sqrt(mean((pmiss_intensive_do_timequad$m.1.probability - pmiss_intensive_do_obs$m)^2))
+
+rmse_intensive_do_timedum
+rmse_intensive_do_timelin
+rmse_intensive_do_timequad
 
 # summarize difference between marginal vs. observed probabilities
-summary(pmiss_intensive_d_tdum$m.1.probability - pmiss_intensive_d_obs$m)
-summary(pmiss_intensive_d_tlin$m.1.probability - pmiss_intensive_d_obs$m)
-summary(pmiss_intensive_d_tquad$m.1.probability - pmiss_intensive_d_obs$m)
+summary(pmiss_intensive_do_timedum$m.1.probability - pmiss_intensive_do_obs$m)
+summary(pmiss_intensive_do_timelin$m.1.probability - pmiss_intensive_do_obs$m)
+summary(pmiss_intensive_do_timequad$m.1.probability - pmiss_intensive_do_obs$m)
 
 #------------------------------------------------------------------------------#
 # SHARED PARAMETER ----
 #------------------------------------------------------------------------------#
 
-# Model 2: Shared Parameter Model ----
-intensive_d_wc <- rblimp(
+# MODEL 2: Shared Parameter Model ----
+intensive_do_sp <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -295,10 +257,10 @@ intensive_d_wc <- rblimp(
   iter = 75000)
 
 # print output
-output(intensive_d_wc)
+output(intensive_do_sp)
 
-# Model 3: Quadratic Shared Parameter Model ----
-intensive_d_wcq <- rblimp(
+# MODEL 3: Quadratic Shared Parameter Model ----
+intensive_do_spq <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -330,10 +292,10 @@ intensive_d_wcq <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_d_wcq)
+output(intensive_do_spq)
 
-# Model 4: Residualized Shared Parameter Model ----
-intensive_d_wcr <- rblimp(
+# MODEL 4: Residual Shared Parameter Model ----
+intensive_do_spr <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -362,14 +324,14 @@ intensive_d_wcr <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(intensive_d_wcr)
+output(intensive_do_spr)
 
-# Model 5: Shared Parameter Model With X Latent Means ----
-intensive_d_wcx <- rblimp(
+# MODEL 5: Shared Parameter Model With X Latent Means ----
+intensive_do_spx <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -402,14 +364,14 @@ intensive_d_wcx <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_d_wcx)
+output(intensive_do_spx)
 
 #------------------------------------------------------------------------------#
 # DIGGLE-KENWARD MODEL ----
 #------------------------------------------------------------------------------#
 
-# Model 6: Diggle-Kenward Model ----
-intensive_d_dk <- rblimp(
+# MODEL 6: Diggle-Kenward Model ----
+intensive_do_dk <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -437,14 +399,14 @@ intensive_d_dk <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 30000,
-  iter = 30000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(intensive_d_dk)
+output(intensive_do_dk)
 
-# Model 7: Quadratic Diggle-Kenward Model ----
-intensive_d_dkq <- rblimp(
+# MODEL 7: Quadratic Diggle-Kenward Model ----
+intensive_do_dkq <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -472,14 +434,14 @@ intensive_d_dkq <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 125000,
-  iter = 125000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
-output(intensive_d_dkq)
+output(intensive_do_dkq)
 
-# Model 8: Residual Diggle-Kenward Model ----
-intensive_d_dkr <- rblimp(
+# MODEL 8: Residual Diggle-Kenward Model ----
+intensive_do_dkr <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -507,14 +469,14 @@ intensive_d_dkr <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 50000,
-  iter = 50000)
+  burn = 75000,
+  iter = 75000)
 
 # print output
-output(intensive_d_dkr)
+output(intensive_do_dkr)
 
-# Model 9: Diggle-Kenward Model With X and Lag(X) ----
-intensive_d_dkx <- rblimp(
+# MODEL 9: Diggle-Kenward Model With X and Lag(X) ----
+intensive_do_dkx <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -543,20 +505,20 @@ intensive_d_dkx <- rblimp(
     d_bdiff = bdiff / sqrt(exp(g0o));',
   seed = 90291,
   chains = 4,
-  burn = 30000,
-  iter = 30000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
-output(intensive_d_dkx)
+output(intensive_do_dkx)
 
-# intensive_d_dkx@estimates
+# intensive_do_dkx@estimates
 
 #------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
-# Model 10: Disaggregated Model ----
-intensive_d_dis <- rblimp(
+# MODEL 10: Disaggregated Model ----
+intensive_do_dis <- rblimp(
   data = intensive_d,
   clusterid = 'l2id',
   timeid = 'time',
@@ -589,7 +551,7 @@ intensive_d_dis <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_d_dis)
+output(intensive_do_dis)
 
 #------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
@@ -652,26 +614,22 @@ extract_int_params <- function(object, method) {
 
 # main summary table ----
 
-# com_tab <- extract_growth_d_params(growth_d_com, "COM")
-mar_tab <- extract_int_params(intensive_d_mar, "MAR")
-wc_tab <- extract_int_params(intensive_d_wc, "WC")
-wcq_tab <- extract_int_params(intensive_d_wcq, "WCQ")
-wcr_tab <- extract_int_params(intensive_d_wcr, "WCR")
-wcx_tab <- extract_int_params(intensive_d_wcx, "WCX")
-dk_tab <- extract_int_params(intensive_d_dk, "DK")
-dkq_tab <- extract_int_params(intensive_d_dkq, "DKQ")
-dkr_tab <- extract_int_params(intensive_d_dkr, "DKR")
-dkx_tab <- extract_int_params(intensive_d_dkx, "DKX")
-dis_tab <- extract_int_params(intensive_d_dis, "DIS")
+mar_tab <- extract_int_params(intensive_do_mar, "MAR")
+sp_tab <- extract_int_params(intensive_do_sp, "SP")
+spq_tab <- extract_int_params(intensive_do_spq, "SPQ")
+spr_tab <- extract_int_params(intensive_do_spr, "SPR")
+spx_tab <- extract_int_params(intensive_do_spx, "SPX")
+dk_tab <- extract_int_params(intensive_do_dk, "DK")
+dkq_tab <- extract_int_params(intensive_do_dkq, "DKQ")
+dkr_tab <- extract_int_params(intensive_do_dkr, "DKR")
+dkx_tab <- extract_int_params(intensive_do_dkx, "DKX")
+dis_tab <- extract_int_params(intensive_do_dis, "DIS")
 
-tab <- cbind(mar_tab,wc_tab,wcq_tab,wcr_tab,wcx_tab,dk_tab,dkq_tab,dkr_tab,dkx_tab,dis_tab)
+tab <- cbind(mar_tab,sp_tab,spq_tab,spr_tab,spx_tab,dk_tab,dkq_tab,dkr_tab,dkx_tab,dis_tab)
 tab_intensive_do <- tab
-
-# write.csv(tab_intensive_do,file = '~/desktop/MNAR Results/tab_intensive_do.csv')
+tab_intensive_do
 
 # mean difference table ----
-
-# rearrange for table
 
 # Extract rows
 tab <- tab_intensive_do 
@@ -699,20 +657,17 @@ out <- do.call(rbind, lapply(methods, function(m) {
 # Final formatting
 rownames(out) <- methods
 out <- as.data.frame(out)
-# colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 iter_counts <- c(
-  MAR = nrow(growth_i_mar@iterations),
-  WC  = nrow(growth_i_wc@iterations),
-  WCQ = nrow(growth_i_wcq@iterations),
-  WCR = nrow(growth_i_wcr@iterations),
-  DK  = nrow(growth_i_dk@iterations),
-  DKQ = nrow(growth_i_dkq@iterations),
-  DKD = nrow(growth_i_dkd@iterations),
-  DIS = nrow(growth_i_dis@iterations)
+  MAR = nrow(intensive_do_mar@iterations),
+  SP  = nrow(intensive_do_sp@iterations),
+  SPQ = nrow(intensive_do_spq@iterations),
+  SPR = nrow(intensive_do_spr@iterations),
+  DK  = nrow(intensive_do_dk@iterations),
+  DKQ = nrow(intensive_do_dkq@iterations),
+  DKD = nrow(intensive_do_dkd@iterations),
+  DIS = nrow(intensive_do_dis@iterations)
 )
-
-# out$Iterations <- iter_counts[rownames(out)]
 
 out <- data.frame(
   Mean_Diff     = out[, 1],
@@ -727,8 +682,7 @@ out <- data.frame(
 )
 
 es_intensive_do <- out
-
-# write.csv(es_intensive_do,file = '~/desktop/MNAR Results/es_intensive_do.csv')
+es_intensive_do
 
 # diagnostics table ----
 
@@ -741,8 +695,8 @@ extract_convergence <- function(object, method) {
   psr_row <- psr_row[is.finite(psr_row)]
   
   data.frame(
-    Min_Neff = round(min(neff),    0),
-    Max_Neff = round(max(neff),    0),
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
     Min_PSR  = round(min(psr_row), 3),
     Max_PSR  = round(max(psr_row), 3),
     row.names = method
@@ -750,18 +704,17 @@ extract_convergence <- function(object, method) {
 }
 
 conv_intensive_do <- rbind(
-  extract_convergence(intensive_d_mar, "MAR"),
-  extract_convergence(intensive_d_wc, "WC"),
-  extract_convergence(intensive_d_wcq, "WCQ"),
-  extract_convergence(intensive_d_wcr, "WCR"),
-  extract_convergence(intensive_d_wcx, "WCX"),
-  extract_convergence(intensive_d_dk, "DK"),
-  extract_convergence(intensive_d_dkq, "DKQ"),
-  extract_convergence(intensive_d_dkr, "DKR"),
-  extract_convergence(intensive_d_dkx, "DKX"),
-  extract_convergence(intensive_d_dis, "DIS")
+  extract_convergence(intensive_do_mar, "MAR"),
+  extract_convergence(intensive_do_sp, "SP"),
+  extract_convergence(intensive_do_spq, "SPQ"),
+  extract_convergence(intensive_do_spr, "SPR"),
+  extract_convergence(intensive_do_spx, "SPX"),
+  extract_convergence(intensive_do_dk, "DK"),
+  extract_convergence(intensive_do_dkq, "DKQ"),
+  extract_convergence(intensive_do_dkr, "DKR"),
+  extract_convergence(intensive_do_dkx, "DKX"),
+  extract_convergence(intensive_do_dis, "DIS")
 )
 
-# write.csv(conv_intensive_do,file = '~/desktop/MNAR Results/conv_intensive_do.csv')
-
+conv_intensive_do
 

@@ -51,8 +51,8 @@ growth_d_com <- rblimp(
     d_diff = diff / sqrt(ycom.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_com)
@@ -81,8 +81,8 @@ growth_d_mar <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_mar)
@@ -126,8 +126,8 @@ growth_d_tlin <- rblimp(
   ',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_tlin)
@@ -152,8 +152,8 @@ growth_d_tquad <- rblimp(
     m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_tquad)
@@ -182,8 +182,8 @@ growth_d_tdum <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_tdum)
@@ -295,8 +295,8 @@ growth_d_wc <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_wc)
@@ -326,8 +326,8 @@ growth_d_wcq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 200000,
-  iter = 100000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_wcq)
@@ -359,7 +359,7 @@ growth_d_wcr <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 200000,
+  burn = 100000,
   iter = 100000)
 
 # print output
@@ -394,8 +394,8 @@ growth_d_dk <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 20000,
-  iter = 20000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(growth_d_dk)
@@ -425,8 +425,8 @@ growth_d_dkq <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 40000,
-  iter = 40000)
+  burn = 50000,
+  iter = 50000)
 
 # print output
 output(growth_d_dkq)
@@ -495,7 +495,7 @@ growth_d_dis <- rblimp(
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 200000,
+  burn = 100000,
   iter = 100000)
 
 # print output
@@ -629,14 +629,14 @@ out <- as.data.frame(out)
 # colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 iter_counts <- c(
-  MAR = nrow(growth_i_mar@iterations),
-  WC  = nrow(growth_i_wc@iterations),
-  WCQ = nrow(growth_i_wcq@iterations),
-  WCR = nrow(growth_i_wcr@iterations),
-  DK  = nrow(growth_i_dk@iterations),
-  DKQ = nrow(growth_i_dkq@iterations),
-  DKD = nrow(growth_i_dkd@iterations),
-  DIS = nrow(growth_i_dis@iterations)
+  MAR = nrow(growth_d_mar@iterations),
+  WC  = nrow(growth_d_wc@iterations),
+  WCQ = nrow(growth_d_wcq@iterations),
+  WCR = nrow(growth_d_wcr@iterations),
+  DK  = nrow(growth_d_dk@iterations),
+  DKQ = nrow(growth_d_dkq@iterations),
+  DKD = nrow(growth_d_dkd@iterations),
+  DIS = nrow(growth_d_dis@iterations)
 )
 
 # out$Iterations <- iter_counts[rownames(out)]
@@ -667,8 +667,8 @@ extract_convergence <- function(object, method) {
   psr_row <- psr_row[is.finite(psr_row)]
   
   data.frame(
-    Min_Neff = round(min(neff),    0),
-    Max_Neff = round(max(neff),    0),
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
     Min_PSR  = round(min(psr_row), 3),
     Max_PSR  = round(max(psr_row), 3),
     row.names = method
