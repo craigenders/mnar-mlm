@@ -659,14 +659,15 @@ rownames(out) <- methods
 out <- as.data.frame(out)
 
 iter_counts <- c(
-  MAR = nrow(intensive_do_mar@iterations),
-  SP  = nrow(intensive_do_sp@iterations),
-  SPQ = nrow(intensive_do_spq@iterations),
-  SPR = nrow(intensive_do_spr@iterations),
-  DK  = nrow(intensive_do_dk@iterations),
-  DKQ = nrow(intensive_do_dkq@iterations),
-  DKD = nrow(intensive_do_dkd@iterations),
-  DIS = nrow(intensive_do_dis@iterations)
+  MAR = nrow(intensive_i_mar@iterations),
+  WC  = nrow(intensive_i_wc@iterations),
+  WCQ = nrow(intensive_i_wcq@iterations),
+  WCR = nrow(intensive_i_wcr@iterations),
+  DK  = nrow(intensive_i_dk@iterations),
+  DKQ = nrow(intensive_i_dkq@iterations),
+  DKR = nrow(intensive_i_dkr@iterations),
+  DKX = nrow(intensive_i_dkx@iterations),
+  DIS = nrow(intensive_i_dis@iterations)
 )
 
 out <- data.frame(

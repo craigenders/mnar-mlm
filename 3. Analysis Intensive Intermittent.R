@@ -734,7 +734,8 @@ iter_counts <- c(
   WCR = nrow(intensive_i_wcr@iterations),
   DK  = nrow(intensive_i_dk@iterations),
   DKQ = nrow(intensive_i_dkq@iterations),
-  DKD = nrow(intensive_i_dkd@iterations),
+  DKR = nrow(intensive_i_dkr@iterations),
+  DKX = nrow(intensive_i_dkx@iterations),
   DIS = nrow(intensive_i_dis@iterations)
 )
 
