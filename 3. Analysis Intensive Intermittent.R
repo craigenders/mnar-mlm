@@ -21,7 +21,7 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-intermittent.csv'
+filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-intermittent copy.csv'
 
 # create data frame from github data
 intensive_i <- read.csv(filepath, stringsAsFactors = T)

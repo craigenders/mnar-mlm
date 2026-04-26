@@ -18,7 +18,7 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-dropout.csv'
+filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-dropout copy.csv'
 
 # create data frame from github data
 growth_d <- read.csv(filepath1, stringsAsFactors = T)

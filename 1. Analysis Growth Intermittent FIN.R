@@ -17,10 +17,7 @@ library(rblimp)
 filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-intermittent.csv'
 
 # create data frame from github data
-growth_i <- read.csv(filepath1, stringsAsFactors = T)
-
-# rename hard coded indicator
-names(growth_i)[names(growth_i) == "m"] <- "m_"
+growth_intermittent <- read.csv(filepath1, stringsAsFactors = T)
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -31,8 +28,8 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 #------------------------------------------------------------------------------#
 
 # MODEL 1: CMAR ----
-growth_im_mar <- rblimp(
-  data = growth_i,
+model1 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -55,15 +52,15 @@ growth_im_mar <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_mar)
+output(model1)
 
 #------------------------------------------------------------------------------#
 # ICC FOR THE MISSINGNESS INDICATOR ----
 #------------------------------------------------------------------------------#
 
-# fit unconditional model
-icc_growth_i <- rblimp(
-  data = growth_i,
+# ICC ----
+icc_missingness <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -74,15 +71,15 @@ icc_growth_i <- rblimp(
   iter = 25000)
 
 # print output
-output(icc_growth_i)
+output(icc_missingness)
 
 #------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES ----
 #------------------------------------------------------------------------------#
 
-# linear trend
-growth_im_timelin <- rblimp(
-  data = growth_i,
+# MISSINGNESS PROBS: Linear Time ----
+time_linear <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -103,11 +100,11 @@ growth_im_timelin <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_timelin)
+output(time_linear)
 
-# quadratic trend
-growth_im_timequad <- rblimp(
-  data = growth_i,
+# MISSINGNESS PROBS: Quadratic Time ----
+time_quadratic <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -128,11 +125,11 @@ growth_im_timequad <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_timequad)
+output(time_quadratic)
 
-# dummy coded time
-growth_im_timedum <- rblimp(
-  data = growth_i,
+# MISSINGNESS PROBS: Dummy-Coded Time ----
+time_dummy <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -157,7 +154,7 @@ growth_im_timedum <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_timedum)
+output(time_dummy)
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES ----
@@ -166,9 +163,9 @@ output(growth_im_timedum)
 ymax <- .35
 ymin <- 0
 
-# plot observed and predicted probabilities
-pgrowth_im_obs <- plot_means(m ~ time | group, 
-    model = growth_im_timedum,
+# plot observed probabilities
+plot_pmiss_obs <- plot_means(m ~ time | group, 
+    model = time_dummy,
     ylab = "Probability",
     title = "Observed Probabilities",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
@@ -176,17 +173,9 @@ pgrowth_im_obs <- plot_means(m ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pgrowth_im_dum <- plot_means(m.1.probability ~ time | group, 
-    model = growth_im_timedum,
-    ylab = "Probability",
-    title = "Dummy Coded Time",
-    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-    theme(legend.position = "top",legend.justification = "center") +
-    scale_linetype_manual(values = c("dashed", "solid")) +
-    geom_line(linewidth = .25)
-
-pgrowth_im_lin <- plot_means(m.1.probability ~ time | group, 
-    model = growth_im_timelin,
+# plot predicted probabilities from linear model
+plot_pmiss_linear <- plot_means(m.1.probability ~ time | group, 
+    model = time_linear,
     ylab = "Probability",
     title = "Linear Time",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
@@ -194,8 +183,9 @@ pgrowth_im_lin <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pgrowth_im_quad <- plot_means(m.1.probability ~ time | group, 
-    model = growth_im_timequad,
+# plot predicted probabilities from quadratic model
+plot_pmiss_quadratic <- plot_means(m.1.probability ~ time | group, 
+    model = time_quadratic,
     ylab = "Probability",
     title = "Quadratic Time",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
@@ -203,38 +193,50 @@ pgrowth_im_quad <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pgrowth_im_combined <- (pgrowth_im_obs | pgrowth_im_lin) / (pgrowth_im_quad | pgrowth_im_dum)
-pgrowth_im_combined
+# plot predicted probabilities from dummy-coded model
+plot_pmiss_dummy <- plot_means(m.1.probability ~ time | group, 
+    model = time_dummy,
+    ylab = "Probability",
+    title = "Dummy Coded Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-# compute marginal probabilities (average individual probabilities) by time and group
-pmiss_growth_im_obs <- aggregate(m ~ time + group, data = growth_im_timedum@average_imp, mean)
-pmiss_growth_im_timedum <- aggregate(m.1.probability ~ time + group, data = growth_im_timedum@average_imp, mean)
-pmiss_growth_im_timelin <- aggregate(m.1.probability ~ time + group, data = growth_im_timelin@average_imp, mean)
-pmiss_growth_im_timequad <- aggregate(m.1.probability ~ time + group, data = growth_im_timequad@average_imp, mean)
+# combine plots with patchwork
+plot_pmiss <- (plot_pmiss_obs | plot_pmiss_linear) / (plot_pmiss_quadratic | plot_pmiss_dummy)
+plot_pmiss
 
-# compute rmse of marginal vs. observed probabilities
-rmse_growth_im_timedum <- sqrt(mean((pmiss_growth_im_timedum$m.1.probability - pmiss_growth_im_obs$m)^2))
-rmse_growth_im_timelin <- sqrt(mean((pmiss_growth_im_timelin$m.1.probability - pmiss_growth_im_obs$m)^2))
-rmse_growth_im_timequad <- sqrt(mean((pmiss_growth_im_timequad$m.1.probability - pmiss_growth_im_obs$m)^2))
+# compute average individual probabilities by time and group
+pmiss_obs <- aggregate(m ~ time + group, data = time_dummy@average_imp, mean)
+pmiss_linear <- aggregate(m.1.probability ~ time + group, data = time_linear@average_imp, mean)
+pmiss_quadratic <- aggregate(m.1.probability ~ time + group, data = time_quadratic@average_imp, mean)
+pmiss_dummy <- aggregate(m.1.probability ~ time + group, data = time_dummy@average_imp, mean)
 
+# compute rmse of predicted vs. observed probabilities
+rmse_pmiss_linear <- sqrt(mean((pmiss_linear$m.1.probability - pmiss_obs$m)^2))
+rmse_pmiss_quadratic <- sqrt(mean((pmiss_quadratic$m.1.probability - pmiss_obs$m)^2))
+rmse_pmiss_dummy <- sqrt(mean((pmiss_dummy$m.1.probability - pmiss_obs$m)^2))
+
+# probability summary table
 miss_fit <- data.frame(
-  RMSE   = round(c(rmse_growth_im_timelin, rmse_growth_im_timequad, rmse_growth_im_timedum), 3),
+  RMSE   = round(c(rmse_pmiss_linear, rmse_pmiss_quadratic, rmse_pmiss_dummy), 3),
   Min    = round(c(
-    min(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
-    min(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
-    min(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+    min(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    min(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    min(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   Median = round(c(
-    median(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
-    median(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
-    median(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+    median(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    median(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    median(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   Mean   = round(c(
-    mean(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
-    mean(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
-    mean(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+    mean(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    mean(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    mean(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   Max    = round(c(
-    max(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
-    max(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
-    max(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+    max(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    max(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    max(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   row.names = c("Linear", "Quadratic", "Dummy")
 )
 
@@ -245,8 +247,8 @@ miss_fit
 #------------------------------------------------------------------------------#
 
 # MODEL 2: Shared Parameter Model ----
-growth_im_sp <- rblimp(
-  data = growth_i,
+model2 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -271,11 +273,11 @@ growth_im_sp <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_sp)
+output(model2)
 
 # MODEL 3: Quadratic Shared Parameter Model ----
-growth_im_spq <- rblimp(
-  data = growth_i,
+model3 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -300,11 +302,11 @@ growth_im_spq <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_spq)
+output(model3)
 
 # MODEL 4: Residual Shared Parameter Model ----
-growth_im_spr <- rblimp(
-  data = growth_i,
+model4 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -331,15 +333,15 @@ growth_im_spr <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_spr)
+output(model4)
 
 #------------------------------------------------------------------------------#
 # SELECTION MODEL ----
 #------------------------------------------------------------------------------#
 
-# MODEL 5: Diggle-Kenward Model ----
-growth_im_dk <- rblimp(
-  data = growth_i,
+# MODEL 5: Diggle-Kenward Selection Model ----
+model5 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -364,11 +366,11 @@ growth_im_dk <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_dk)
+output(model5)
 
 # MODEL 6: Quadratic Diggle-Kenward Model ----
-growth_im_dkq <- rblimp(
-  data = growth_i,
+model6 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -393,11 +395,11 @@ growth_im_dkq <- rblimp(
   iter = 25000)
 
 # print output
-output(growth_im_dkq)
+output(model6)
 
 # MODEL 7: Residual Diggle-Kenward Model ----
-growth_im_dkd <- rblimp(
-  data = growth_i,
+model7 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -424,15 +426,15 @@ growth_im_dkd <- rblimp(
   iter = 200000)
 
 # print output
-output(growth_im_dkd)
+output(model7)
 
 #------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
 # MODEL 8: Disaggregated Model ----
-growth_im_dis <- rblimp(
-  data = growth_i,
+model8 <- rblimp(
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (missing)',
@@ -459,12 +461,13 @@ growth_im_dis <- rblimp(
   iter = 200000)
 
 # print output
-output(growth_im_dis)
+output(model8)
 
 #------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
 #------------------------------------------------------------------------------#
 
+# function to extract key estimates
 extract_growth_params <- function(object, method) {
   
   tab <- object@estimates
@@ -485,7 +488,7 @@ extract_growth_params <- function(object, method) {
   
   res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
   
-  # Rename rows to cleaner presentation labels
+  # rename rows to cleaner presentation labels
   rownames(res) <- c(
     "Intercept (G = 0)",
     "Slope (G = 0)",
@@ -509,74 +512,44 @@ extract_growth_params <- function(object, method) {
 }
 
 # main summary table ----
-
-mar_tab <- extract_growth_params(growth_im_mar, "MAR")
-sp_tab  <- extract_growth_params(growth_im_sp, "SP")
-spq_tab <- extract_growth_params(growth_im_spq, "SPQ")
-spr_tab <- extract_growth_params(growth_im_spr, "SPR")
-dk_tab  <- extract_growth_params(growth_im_dk, "DK")
-dkq_tab <- extract_growth_params(growth_im_dkq, "DKQ")
-dkd_tab <- extract_growth_params(growth_im_dkd, "DKD")
-dis_tab <- extract_growth_params(growth_im_dis, "DIS")
-
-tab <- cbind(mar_tab,sp_tab,spq_tab,spr_tab,dk_tab,dkq_tab,dkd_tab,dis_tab)
-tab_growth_im <- tab
-tab_growth_im
+table_summary <- cbind(
+  extract_growth_params(model1, "MOD1"),
+  extract_growth_params(model2, "MOD2"),
+  extract_growth_params(model3, "MOD3"),
+  extract_growth_params(model4, "MOD4"),
+  extract_growth_params(model5, "MOD5"),
+  extract_growth_params(model6, "MOD6"),
+  extract_growth_params(model7, "MOD7"),
+  extract_growth_params(model8, "MOD8")
+)
+table_summary
 
 # mean difference table ----
 
-# Extract rows
-mean_row   <- tab["Mean Diff.", ]
-std_row    <- tab["Std. Mean Diff.", ]
-pseudo_row <- tab["Pseudo-Rsq", ]
+# extract rows
+mean_row   <- table_summary["Mean Diff.", ]
+std_row    <- table_summary["Std. Mean Diff.", ]
 
-# Get method names
-col_names <- colnames(tab)
+# get method names
+col_names <- colnames(table_summary)
 methods <- unique(sub("^(Est|SD)_", "", col_names))
 
-# Build output table
-out <- do.call(rbind, lapply(methods, function(m) {
+# build table
+table_diff <- do.call(rbind, lapply(methods, function(m) {
   c(
     Mean_Diff      = mean_row[paste0("Est_", m)],
     SD_Mean_Diff   = mean_row[paste0("SD_", m)],
     Std_Mean_Diff  = std_row[paste0("Est_", m)],
-    SD_Std_Mean    = std_row[paste0("SD_", m)],
-    Pseudo_Rsq     = pseudo_row[paste0("Est_", m)]
+    SD_Std_Mean    = std_row[paste0("SD_", m)]
   )
 }))
-
-# Final formatting
-rownames(out) <- methods
-out <- as.data.frame(out)
-
-iter_counts <- c(
-  MAR = nrow(growth_im_mar@iterations),
-  SP  = nrow(growth_im_sp@iterations),
-  SPQ = nrow(growth_im_spq@iterations),
-  SPR = nrow(growth_im_spr@iterations),
-  DK  = nrow(growth_im_dk@iterations),
-  DKQ = nrow(growth_im_dkq@iterations),
-  DKD = nrow(growth_im_dkd@iterations),
-  DIS = nrow(growth_im_dis@iterations)
-)
-
-out <- data.frame(
-  Mean_Diff     = out[, 1],
-  SD            = out[, 2],
-  gap1          = NA,
-  Std_Mean_Diff = out[, 3],
-  SD2           = out[, 4],
-  gap2          = NA,
-  Pseudo_R2     = out[, 5],
-  Iterations    = iter_counts[rownames(out)],
-  row.names     = rownames(out)
-)
-
-es_growth_im <- out
-es_growth_im
+rownames(table_diff) <- methods
+table_diff <- as.data.frame(table_diff)
+table_diff
 
 # diagnostics table ----
 
+# function to extract convergence diagnostics
 extract_convergence <- function(object, method) {
   
   neff <- object@estimates[, "N_Eff"]
@@ -594,15 +567,27 @@ extract_convergence <- function(object, method) {
   )
 }
 
-conv_growth_im <- rbind(
-  extract_convergence(growth_im_mar, "MAR"),
-  extract_convergence(growth_im_sp, "SP"),
-  extract_convergence(growth_im_spq, "SPQ"),
-  extract_convergence(growth_im_spr, "SPR"),
-  extract_convergence(growth_im_dk, "DK"),
-  extract_convergence(growth_im_dkq, "DKQ"),
-  extract_convergence(growth_im_dkd, "DKD"),
-  extract_convergence(growth_im_dis, "DIS")
+# build table
+table_diag <- rbind(
+  extract_convergence(model1, "MOD1"),
+  extract_convergence(model2, "MOD2"),
+  extract_convergence(model3, "MOD3"),
+  extract_convergence(model4, "MOD4"),
+  extract_convergence(model5, "MOD5"),
+  extract_convergence(model6, "MOD6"),
+  extract_convergence(model7, "MOD7"),
+  extract_convergence(model8, "MOD8")
 )
 
-conv_growth_im
+# add number of iterations
+table_diag$Iterations <- c(
+  nrow(model1@iterations),
+  nrow(model2@iterations),
+  nrow(model3@iterations),
+  nrow(model4@iterations),
+  nrow(model5@iterations),
+  nrow(model6@iterations),
+  nrow(model7@iterations),
+  nrow(model8@iterations)
+)
+table_diag

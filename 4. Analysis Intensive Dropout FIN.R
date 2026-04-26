@@ -17,10 +17,9 @@ library(rblimp)
 filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-dropout.csv'
 
 # create data frame from github data
-intensive_d <- read.csv(filepath, stringsAsFactors = T)
+intensive_dropout <- read.csv(filepath, stringsAsFactors = T)
 
-# rename hard coded indicator
-names(intensive_d)[names(intensive_d) == "m"] <- "m_"
+
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -31,8 +30,8 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 #------------------------------------------------------------------------------#
 
 # MODEL 1: CMAR ----
-intensive_do_mar <- rblimp(
-  data = intensive_d,
+model1 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -60,15 +59,15 @@ intensive_do_mar <- rblimp(
   iter = 25000)
 
 # print output
-output(intensive_do_mar)
+output(model1)
 
 #------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
-# linear trend ----
-intensive_do_timelin <- rblimp(
-  data = intensive_d,
+# MISSINGNESS PROBS: Linear Time ----
+time_linear <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -94,11 +93,11 @@ intensive_do_timelin <- rblimp(
   nimps = 20)
 
 # print output
-output(intensive_do_timelin)
+output(time_linear)
 
-# quadratic trend ----
-intensive_do_timequad <- rblimp(
-  data = intensive_d,
+# MISSINGNESS PROBS: Quadratic Time ----
+time_quadratic <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -124,11 +123,11 @@ intensive_do_timequad <- rblimp(
   nimps = 20)
 
 # print output
-output(intensive_do_timequad)
+output(time_quadratic)
 
-# dummy-coded time ----
-intensive_do_timedum <- rblimp(
-  data = intensive_d,
+# MISSINGNESS PROBS: Dummy-Coded Time ----
+time_dummy <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -154,7 +153,7 @@ intensive_do_timedum <- rblimp(
   iter = 25000)
 
 # print output
-output(intensive_do_timedum)
+output(time_dummy)
 
 #------------------------------------------------------------------------------#
 # PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
@@ -163,9 +162,9 @@ output(intensive_do_timedum)
 ymax <- .15
 ymin <- 0
 
-# plot observed and predicted probabilities
-pintensive_do_obs <- plot_means(m ~ time | group, 
-    model = intensive_do_timedum,
+# plot observed probabilities
+plot_pmiss_obs <- plot_means(m ~ time | group, 
+    model = time_dummy,
     ylab = "Probability",
     title = "Observed Probabilities",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
@@ -173,17 +172,9 @@ pintensive_do_obs <- plot_means(m ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pintensive_do_dum <- plot_means(m.1.probability ~ time | group, 
-    model = intensive_do_timedum,
-    ylab = "Probability",
-    title = "Dummy Coded Time",
-    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
-    theme(legend.position = "top",legend.justification = "center") +
-    scale_linetype_manual(values = c("dashed", "solid")) +
-    geom_line(linewidth = .25)
-
-pintensive_do_lin <- plot_means(m.1.probability ~ time | group, 
-    model = intensive_do_timelin,
+# plot predicted probabilities from linear model
+plot_pmiss_linear <- plot_means(m.1.probability ~ time | group, 
+    model = time_linear,
     ylab = "Probability",
     title = "Linear Time",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
@@ -191,8 +182,9 @@ pintensive_do_lin <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pintensive_do_quad <- plot_means(m.1.probability ~ time | group, 
-    model = intensive_do_timequad,
+# plot predicted probabilities from quadratic model
+plot_pmiss_quadratic <- plot_means(m.1.probability ~ time | group, 
+    model = time_quadratic,
     ylab = "Probability",
     title = "Quadratic Time",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
@@ -200,41 +192,52 @@ pintensive_do_quad <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pintensive_do_combined <- (pintensive_do_obs | pintensive_do_lin) / (pintensive_do_quad | pintensive_do_dum)
-pintensive_do_combined
+# plot predicted probabilities from dummy-coded model
+plot_pmiss_dummy <- plot_means(m.1.probability ~ time | group, 
+    model = time_dummy,
+    ylab = "Probability",
+    title = "Dummy Coded Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
+    theme(legend.position = "top",legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
 
-# compute marginal probabilities (average individual probabilities) by time and group
-pmiss_intensive_do_obs <- aggregate(m ~ time + group, data = intensive_do_timedum@average_imp, mean)
-pmiss_intensive_do_timedum <- aggregate(m.1.probability ~ time + group, data = intensive_do_timedum@average_imp, mean)
-pmiss_intensive_do_timelin <- aggregate(m.1.probability ~ time + group, data = intensive_do_timelin@average_imp, mean)
-pmiss_intensive_do_timequad <- aggregate(m.1.probability ~ time + group, data = intensive_do_timequad@average_imp, mean)
+# combine plots with patchwork
+plot_pmiss <- (plot_pmiss_obs | plot_pmiss_linear) / (plot_pmiss_quadratic | plot_pmiss_dummy)
+plot_pmiss
 
-# compute rmse of marginal vs. observed probabilities
-rmse_intensive_do_timedum <- sqrt(mean((pmiss_intensive_do_timedum$m.1.probability - pmiss_intensive_do_obs$m)^2))
-rmse_intensive_do_timelin <- sqrt(mean((pmiss_intensive_do_timelin$m.1.probability - pmiss_intensive_do_obs$m)^2))
-rmse_intensive_do_timequad <- sqrt(mean((pmiss_intensive_do_timequad$m.1.probability - pmiss_intensive_do_obs$m)^2))
+# compute average individual probabilities by time and group
+pmiss_obs <- aggregate(m ~ time + group, data = time_dummy@average_imp, mean)
+pmiss_linear <- aggregate(m.1.probability ~ time + group, data = time_linear@average_imp, mean)
+pmiss_quadratic <- aggregate(m.1.probability ~ time + group, data = time_quadratic@average_imp, mean)
+pmiss_dummy <- aggregate(m.1.probability ~ time + group, data = time_dummy@average_imp, mean)
 
+# compute rmse of predicted vs. observed probabilities
+rmse_pmiss_linear <- sqrt(mean((pmiss_linear$m.1.probability - pmiss_obs$m)^2))
+rmse_pmiss_quadratic <- sqrt(mean((pmiss_quadratic$m.1.probability - pmiss_obs$m)^2))
+rmse_pmiss_dummy <- sqrt(mean((pmiss_dummy$m.1.probability - pmiss_obs$m)^2))
+
+# probability summary table
 miss_fit <- data.frame(
-  RMSE   = round(c(rmse_intensive_do_timelin, rmse_intensive_do_timequad, rmse_intensive_do_timedum), 3),
+  RMSE   = round(c(rmse_pmiss_linear, rmse_pmiss_quadratic, rmse_pmiss_dummy), 3),
   Min    = round(c(
-    min(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
-    min(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
-    min(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+    min(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    min(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    min(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   Median = round(c(
-    median(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
-    median(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
-    median(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+    median(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    median(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    median(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   Mean   = round(c(
-    mean(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
-    mean(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
-    mean(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+    mean(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    mean(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    mean(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   Max    = round(c(
-    max(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
-    max(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
-    max(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+    max(pmiss_linear$m.1.probability   - pmiss_obs$m),
+    max(pmiss_quadratic$m.1.probability  - pmiss_obs$m),
+    max(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   row.names = c("Linear", "Quadratic", "Dummy")
 )
-
 miss_fit
 
 #------------------------------------------------------------------------------#
@@ -242,8 +245,8 @@ miss_fit
 #------------------------------------------------------------------------------#
 
 # MODEL 2: Shared Parameter Model ----
-intensive_do_sp <- rblimp(
-  data = intensive_d,
+model2 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -274,11 +277,11 @@ intensive_do_sp <- rblimp(
   iter = 75000)
 
 # print output
-output(intensive_do_sp)
+output(model2)
 
 # MODEL 3: Quadratic Shared Parameter Model ----
-intensive_do_spq <- rblimp(
-  data = intensive_d,
+model3 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -309,11 +312,11 @@ intensive_do_spq <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_do_spq)
+output(model3)
 
 # MODEL 4: Residual Shared Parameter Model ----
-intensive_do_spr <- rblimp(
-  data = intensive_d,
+model4 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -345,11 +348,11 @@ intensive_do_spr <- rblimp(
   iter = 25000)
 
 # print output
-output(intensive_do_spr)
+output(model4)
 
-# MODEL 5: Shared Parameter Model With X Latent Means ----
-intensive_do_spx <- rblimp(
-  data = intensive_d,
+# MODEL 5: Shared Parameter Model With Covariate Latent Means ----
+model5 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -380,15 +383,15 @@ intensive_do_spx <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_do_spx)
+output(model5)
 
 #------------------------------------------------------------------------------#
 # DIGGLE-KENWARD MODEL ----
 #------------------------------------------------------------------------------#
 
-# MODEL 6: Diggle-Kenward Model ----
-intensive_do_dk <- rblimp(
-  data = intensive_d,
+# MODEL 6: Diggle-Kenward Selection Model ----
+model6 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -419,11 +422,11 @@ intensive_do_dk <- rblimp(
   iter = 25000)
 
 # print output
-output(intensive_do_dk)
+output(model6)
 
 # MODEL 7: Quadratic Diggle-Kenward Model ----
-intensive_do_dkq <- rblimp(
-  data = intensive_d,
+model7 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -454,11 +457,11 @@ intensive_do_dkq <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_do_dkq)
+output(model7)
 
 # MODEL 8: Residual Diggle-Kenward Model ----
-intensive_do_dkr <- rblimp(
-  data = intensive_d,
+model8 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -489,11 +492,11 @@ intensive_do_dkr <- rblimp(
   iter = 75000)
 
 # print output
-output(intensive_do_dkr)
+output(model8)
 
-# MODEL 9: Diggle-Kenward Model With X and Lag(X) ----
-intensive_do_dkx <- rblimp(
-  data = intensive_d,
+# MODEL 9: Diggle-Kenward Model With Covariate and its Lag ----
+model9 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -525,17 +528,15 @@ intensive_do_dkx <- rblimp(
   iter = 25000)
 
 # print output
-output(intensive_do_dkx)
-
-# intensive_do_dkx@estimates
+output(model9)
 
 #------------------------------------------------------------------------------#
 # DISAGGREGATED MODEL ----
 #------------------------------------------------------------------------------#
 
 # MODEL 10: Disaggregated Model ----
-intensive_do_dis <- rblimp(
-  data = intensive_d,
+model10 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
@@ -566,13 +567,14 @@ intensive_do_dis <- rblimp(
   iter = 200000)
 
 # print output
-output(intensive_do_dis)
+output(model10)
 
 #------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
 #------------------------------------------------------------------------------#
 
-extract_int_params <- function(object, method) {
+# function to extract key estimates
+extract_intensive_params <- function(object, method) {
   
   tab <- object@estimates
   
@@ -598,7 +600,7 @@ extract_int_params <- function(object, method) {
   
   res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
   
-  # Rename rows to cleaner presentation labels
+  # rename rows to cleaner presentation labels
   rownames(res) <- c(
     "Intercept (G = 0)",
     "Slope (G = 0)",
@@ -628,80 +630,46 @@ extract_int_params <- function(object, method) {
 }
 
 # main summary table ----
-
-mar_tab <- extract_int_params(intensive_do_mar, "MAR")
-sp_tab <- extract_int_params(intensive_do_sp, "SP")
-spq_tab <- extract_int_params(intensive_do_spq, "SPQ")
-spr_tab <- extract_int_params(intensive_do_spr, "SPR")
-spx_tab <- extract_int_params(intensive_do_spx, "SPX")
-dk_tab <- extract_int_params(intensive_do_dk, "DK")
-dkq_tab <- extract_int_params(intensive_do_dkq, "DKQ")
-dkr_tab <- extract_int_params(intensive_do_dkr, "DKR")
-dkx_tab <- extract_int_params(intensive_do_dkx, "DKX")
-dis_tab <- extract_int_params(intensive_do_dis, "DIS")
-
-tab <- cbind(mar_tab,sp_tab,spq_tab,spr_tab,spx_tab,dk_tab,dkq_tab,dkr_tab,dkx_tab,dis_tab)
-tab_intensive_do <- tab
-tab_intensive_do
+table_summary <- cbind(
+  extract_growth_params(model1, "MOD1"),
+  extract_growth_params(model2, "MOD2"),
+  extract_growth_params(model3, "MOD3"),
+  extract_growth_params(model4, "MOD4"),
+  extract_growth_params(model5, "MOD5"),
+  extract_growth_params(model6, "MOD6"),
+  extract_growth_params(model7, "MOD7"),
+  extract_growth_params(model8, "MOD8"),
+  extract_growth_params(model9, "MOD9"),
+  extract_growth_params(model10, "MOD10"),
+)
+table_summary
 
 # mean difference table ----
 
-# Extract rows
-tab <- tab_intensive_do 
-mean_row   <- tab["Mean Diff.", ]
-std_row    <- tab["Std. Mean Diff.", ]
-# mean_row   <- tab["Slope Diff.", ]
-# std_row    <- tab["Std. Slope Diff.", ]
-pseudo_row <- tab["Pseudo-Rsq", ]
+# extract rows
+mean_row   <- table_summary["Mean Diff.", ]
+std_row    <- table_summary["Std. Mean Diff.", ]
 
-# Get method names
-col_names <- colnames(tab)
+# get method names
+col_names <- colnames(table_summary)
 methods <- unique(sub("^(Est|SD)_", "", col_names))
 
-# Build output table
-out <- do.call(rbind, lapply(methods, function(m) {
+# build table
+table_diff <- do.call(rbind, lapply(methods, function(m) {
   c(
     Mean_Diff      = mean_row[paste0("Est_", m)],
     SD_Mean_Diff   = mean_row[paste0("SD_", m)],
     Std_Mean_Diff  = std_row[paste0("Est_", m)],
-    SD_Std_Mean    = std_row[paste0("SD_", m)],
-    Pseudo_Rsq     = pseudo_row[paste0("Est_", m)]
+    SD_Std_Mean    = std_row[paste0("SD_", m)]
   )
 }))
-
-# Final formatting
-rownames(out) <- methods
-out <- as.data.frame(out)
-
-iter_counts <- c(
-  MAR = nrow(intensive_i_mar@iterations),
-  WC  = nrow(intensive_i_wc@iterations),
-  WCQ = nrow(intensive_i_wcq@iterations),
-  WCR = nrow(intensive_i_wcr@iterations),
-  DK  = nrow(intensive_i_dk@iterations),
-  DKQ = nrow(intensive_i_dkq@iterations),
-  DKR = nrow(intensive_i_dkr@iterations),
-  DKX = nrow(intensive_i_dkx@iterations),
-  DIS = nrow(intensive_i_dis@iterations)
-)
-
-out <- data.frame(
-  Mean_Diff     = out[, 1],
-  SD            = out[, 2],
-  gap1          = NA,
-  Std_Mean_Diff = out[, 3],
-  SD2           = out[, 4],
-  gap2          = NA,
-  Pseudo_R2     = out[, 5],
-  Iterations    = iter_counts[rownames(out)],
-  row.names     = rownames(out)
-)
-
-es_intensive_do <- out
-es_intensive_do
+rownames(table_diff) <- methods
+table_diff <- as.data.frame(table_diff)
+table_diff
 
 # diagnostics table ----
 
+# function to extract convergence diagnostics
 extract_convergence <- function(object, method) {
   
   neff <- object@estimates[, "N_Eff"]
@@ -719,18 +687,33 @@ extract_convergence <- function(object, method) {
   )
 }
 
-conv_intensive_do <- rbind(
-  extract_convergence(intensive_do_mar, "MAR"),
-  extract_convergence(intensive_do_sp, "SP"),
-  extract_convergence(intensive_do_spq, "SPQ"),
-  extract_convergence(intensive_do_spr, "SPR"),
-  extract_convergence(intensive_do_spx, "SPX"),
-  extract_convergence(intensive_do_dk, "DK"),
-  extract_convergence(intensive_do_dkq, "DKQ"),
-  extract_convergence(intensive_do_dkr, "DKR"),
-  extract_convergence(intensive_do_dkx, "DKX"),
-  extract_convergence(intensive_do_dis, "DIS")
+# build table
+table_diag <- rbind(
+  extract_convergence(model1, "MOD1"),
+  extract_convergence(model2, "MOD2"),
+  extract_convergence(model3, "MOD3"),
+  extract_convergence(model4, "MOD4"),
+  extract_convergence(model5, "MOD5"),
+  extract_convergence(model6, "MOD6"),
+  extract_convergence(model7, "MOD7"),
+  extract_convergence(model8, "MOD8"),
+  extract_convergence(model8, "MOD9"),
+  extract_convergence(model10, "MOD10") 
 )
 
-conv_intensive_do
+# add number of iterations
+table_diag$Iterations <- c(
+  nrow(model1@iterations),
+  nrow(model2@iterations),
+  nrow(model3@iterations),
+  nrow(model4@iterations),
+  nrow(model5@iterations),
+  nrow(model6@iterations),
+  nrow(model7@iterations),
+  nrow(model8@iterations)
+  nrow(model9@iterations)
+  nrow(model10@iterations)
+)
+table_diag
+
 
