@@ -14,10 +14,10 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-dropout.csv'
+filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-intermittent.csv'
 
 # create data frame from github data
-growth_dropout <- read.csv(filepath1, stringsAsFactors = T)
+growth_intermittent <- read.csv(filepath1, stringsAsFactors = T)
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
@@ -29,10 +29,10 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 
 # MODEL 1: CMAR ----
 model1 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -41,8 +41,7 @@ model1 <- rblimp(
     beta ~ intercept@g0b group@g1b;
     alpha ~~ beta;
     level1:
-    y ~ intercept@alpha time@beta;
-    m ~ intercept | 1@0',
+    y ~ intercept@alpha time@beta;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
@@ -55,65 +54,34 @@ model1 <- rblimp(
 output(model1)
 
 #------------------------------------------------------------------------------#
+# ICC FOR THE MISSINGNESS INDICATOR ----
+#------------------------------------------------------------------------------#
+
+# ICC ----
+icc_missingness <- rblimp(
+  data = growth_intermittent,
+  clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  model = 'm ~ intercept | intercept;',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+# print output
+output(icc_missingness)
+
+#------------------------------------------------------------------------------#
 # TIME-RELATED CHANGES ----
 #------------------------------------------------------------------------------#
 
 # MISSINGNESS PROBS: Linear Time ----
 time_linear <- rblimp(
-  data = growth_dropout,
-  clusterid = 'l2id',
-  timeid = 'time',
-  dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
-  fixed = 'time group',
-  model = '
-    level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
-    level1:
-    y ~ intercept@alpha time@beta;
-    missingness:
-    m ~ intercept@-3 time@b1 time*group@b2 | intercept@0;',
-  seed = 90291,
-  chains = 4,
-  burn = 25000,
-  iter = 25000)
-
-# print output
-output(time_linear)
-
-# MISSINGNESS PROBS: Quadratic Time ----
-time_quadratic <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id', 
   timeid = 'time',
-  dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
-  fixed = 'time group',
-  model = '
-    level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
-    level1:
-    y ~ intercept@alpha time@beta;
-    missingness:
-    m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
-  seed = 90291,
-  chains = 4,
-  burn = 25000,
-  iter = 25000)
-
-# print output
-output(time_quadratic)
-
-# MISSINGNESS PROBS: Dummy-Coded Time ----
-time_dummy <- rblimp(
-  data = growth_dropout,
-  clusterid = 'l2id',
-  timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'time group',
   model = '
@@ -124,7 +92,57 @@ time_dummy <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    m ~ intercept@-3 | intercept@0;
+    m ~ intercept time group time*group | intercept;',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+# print output
+output(time_linear)
+
+# MISSINGNESS PROBS: Quadratic Time ----
+time_quadratic <- rblimp(
+  data = growth_intermittent,
+  clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta',
+  fixed = 'time group',
+  model = '
+    level2:
+    alpha ~ 1 group;
+    beta ~ 1 group;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    m ~ intercept time time^2 group time*group time^2*group | intercept;',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+# print output
+output(time_quadratic)
+
+# MISSINGNESS PROBS: Dummy-Coded Time ----
+time_dummy <- rblimp(
+  data = growth_intermittent,
+  clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta',
+  fixed = 'time group',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    alpha ~~ beta;
+    level1:
+    y ~ intercept@alpha time@beta;
+    missingness:
+    m ~ intercept group | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -141,7 +159,7 @@ output(time_dummy)
 # PLOT MISSINGNESS PROBABILITIES ----
 #------------------------------------------------------------------------------#
 
-ymax <- .5
+ymax <- .35
 ymin <- 0
 
 # plot observed probabilities
@@ -220,6 +238,7 @@ miss_fit <- data.frame(
     max(pmiss_dummy$m.1.probability   - pmiss_obs$m)), 3),
   row.names = c("Linear", "Quadratic", "Dummy")
 )
+
 miss_fit
 
 #------------------------------------------------------------------------------#
@@ -228,10 +247,10 @@ miss_fit
 
 # MODEL 2: Shared Parameter Model ----
 model2 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -242,8 +261,7 @@ model2 <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha*d beta*d | intercept@0;
+    m ~ intercept group alpha beta | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -258,10 +276,10 @@ output(model2)
 
 # MODEL 3: Quadratic Shared Parameter Model ----
 model3 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -272,8 +290,7 @@ model3 <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha*d alpha*d^2 beta*d beta*d^2 | intercept@0;
+    m ~ intercept group alpha alpha^2 beta beta^2 | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -288,10 +305,10 @@ output(model3)
 
 # MODEL 4: Residual Shared Parameter Model ----
 model4 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -304,16 +321,15 @@ model4 <- rblimp(
     missingness:
     alpha_res = alpha - (g0a + g1a*group);
     beta_res = beta - (g0b + g1b*group);
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha_res*d beta_res*d | intercept@0;
+    m ~ intercept group alpha_res beta_res | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 200000,
-  iter = 200000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(model4)
@@ -324,10 +340,10 @@ output(model4)
 
 # MODEL 5: Diggle-Kenward Selection Model ----
 model5 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-    dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -338,8 +354,7 @@ model5 <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 y*d y.lag*d | intercept@0;
+    m ~ intercept group y y.lag | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -354,10 +369,10 @@ output(model5)
 
 # MODEL 6: Quadratic Diggle-Kenward Model ----
 model6 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -368,26 +383,25 @@ model6 <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 y*d y^2*d y.lag*d | intercept@0;
+    m ~ intercept group y y^2 y.lag | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 50000,
-  iter = 50000)
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(model6)
 
 # MODEL 7: Residual Diggle-Kenward Model ----
 model7 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -398,10 +412,9 @@ model7 <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time < 1, 0, 1);
     yw = y - (alpha + beta*time);
     lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 yw*d lagyw*d | intercept@0;
+    m ~ intercept group yw lagyw | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
@@ -420,10 +433,10 @@ output(model7)
 
 # MODEL 8: Disaggregated Model ----
 model8 <- rblimp(
-  data = growth_dropout,
+  data = growth_intermittent,
   clusterid = 'l2id',
   timeid = 'time',
-  dropout = 'm = y (monotone)',
+  dropout = 'm = y (missing)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -434,18 +447,17 @@ model8 <- rblimp(
     level1:
     y ~ intercept@alpha time@beta;
     missingness:
-    d = ifelse(time < 1, 0, 1);
     yw = y - (alpha + beta*time);
     lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 yw*d lagyw*d alpha*d beta*d | intercept@0;
+    m ~ intercept group yw lagyw alpha beta | intercept;
     { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
     diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
     d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
   seed = 90291,
   chains = 4,
-  burn = 100000,
-  iter = 100000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(model8)
@@ -473,9 +485,14 @@ extract_growth_params <- function(object, method) {
     "m R2: Coefficients"
   )
   
-  res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
+  res <- do.call(rbind, lapply(rows, function(r) {
+    if (r %in% rownames(tab)) {
+      round(tab[r, c("Estimate", "StdDev"), drop = FALSE], 2)
+    } else {
+      data.frame(Estimate = NA_real_, StdDev = NA_real_, row.names = r)
+    }
+  }))
   
-  # rename rows to cleaner presentation labels
   rownames(res) <- c(
     "Intercept (G = 0)",
     "Slope (G = 0)",
@@ -578,4 +595,3 @@ table_diag$Iterations <- c(
   nrow(model8@iterations)
 )
 table_diag
-

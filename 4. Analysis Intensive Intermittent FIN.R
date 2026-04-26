@@ -44,13 +44,10 @@ model1 <- rblimp(
     alpha beta omega ~~ alpha beta omega;
     level1:
     y ~ intercept@alpha x@beta;
-    var(y) ~ intercept@omega;
-    m ~ intercept;',
+    var(y) ~ intercept@omega;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 25000,
@@ -281,10 +278,8 @@ model2 <- rblimp(
     m ~ intercept group alpha omega | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 25000,
@@ -315,10 +310,8 @@ model3 <- rblimp(
     m ~ intercept group alpha alpha^2 omega omega^2 | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 25000,
@@ -350,10 +343,8 @@ model4 <- rblimp(
     m ~ intercept group alpha_res omega | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 25000,
@@ -384,10 +375,8 @@ model5 <- rblimp(
     m ~ intercept group alpha omega x.mean | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 25000,
@@ -422,10 +411,8 @@ model6 <- rblimp(
     m ~ intercept group y y.lag | intercept;
     { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 25000,
@@ -456,10 +443,8 @@ model7 <- rblimp(
     m ~ intercept group y y^2 y.lag | intercept;
     { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 50000,
@@ -490,10 +475,8 @@ model8 <- rblimp(
     m ~ intercept group (y - alpha) (y.lag - alpha) | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 75000,
@@ -525,10 +508,8 @@ model9 <- rblimp(
     m ~ intercept group y y.lag x x.lag | intercept;
     { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 50000,
@@ -563,10 +544,8 @@ model10 <- rblimp(
     m ~ intercept group (y - alpha) (y.lag - alpha) alpha omega | intercept;
     { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
   parameters = '
-    adiff = g1a; 
-    d_adiff = adiff / sqrt(alpha.totalvar);
-    bdiff = g1b; 
-    d_bdiff = bdiff / sqrt(exp(g0o));',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   chains = 4,
   burn = 75000,
@@ -597,16 +576,19 @@ extract_intensive_params <- function(object, method) {
     "omega residual variance",
     "Cor( alpha, omega )",
     "Cor( beta, omega )",
-    "Parameter: adiff",
-    "Parameter: d_adiff",
-    "Parameter: bdiff",
-    "Parameter: d_bdiff",
+    "Parameter: diff",
+    "Parameter: d_diff",
     "m R2: Coefficients"
   )
   
-  res <- round(tab[rows, c("Estimate", "StdDev"), drop = FALSE],2)
+  res <- do.call(rbind, lapply(rows, function(r) {
+    if (r %in% rownames(tab)) {
+      round(tab[r, c("Estimate", "StdDev"), drop = FALSE], 2)
+    } else {
+      data.frame(Estimate = NA_real_, StdDev = NA_real_, row.names = r)
+    }
+  }))
   
-  # rename rows to cleaner presentation labels
   rownames(res) <- c(
     "Intercept (G = 0)",
     "Slope (G = 0)",
@@ -616,14 +598,12 @@ extract_intensive_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Intercept, Slope)",
     "Var(Residual)",
-    "Intercept Log-Var",  
+    "Intercept Log-Var",
     "Var(Log-Var)",
     "Cor(Intercept, Log-Var)",
     "Cor(Log-Var, Slope)",
     "Mean Diff.",
     "Std. Mean Diff.",
-    "Slope Diff.",
-    "Std. Slope Diff.",
     "Pseudo-Rsq"
   )
   
@@ -646,7 +626,7 @@ table_summary <- cbind(
   extract_growth_params(model7, "MOD7"),
   extract_growth_params(model8, "MOD8"),
   extract_growth_params(model9, "MOD9"),
-  extract_growth_params(model10, "MOD10"),
+  extract_growth_params(model10, "MOD10")
 )
 table_summary
 
@@ -716,8 +696,8 @@ table_diag$Iterations <- c(
   nrow(model5@iterations),
   nrow(model6@iterations),
   nrow(model7@iterations),
-  nrow(model8@iterations)
-  nrow(model9@iterations)
+  nrow(model8@iterations),
+  nrow(model9@iterations),
   nrow(model10@iterations)
 )
 table_diag
