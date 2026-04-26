@@ -217,10 +217,8 @@ pintensive_im_quad <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pintensive_im_obs
-pintensive_im_dum
-pintensive_im_lin
-pintensive_im_quad
+pintensive_im_combined <- (pintensive_im_obs | pintensive_im_lin) / (pintensive_im_quad | pintensive_im_dum)
+pintensive_im_combined
 
 # compute marginal probabilities (average individual probabilities) by time and group
 pmiss_intensive_im_obs <- aggregate(m ~ time + group, data = intensive_im_timedum@average_imp, mean)
@@ -233,14 +231,28 @@ rmse_intensive_im_timelin <- sqrt(mean((pmiss_intensive_im_timelin$m.1.probabili
 rmse_intensive_im_timequad <- sqrt(mean((pmiss_intensive_im_timequad$m.1.probability - pmiss_intensive_im_obs$m)^2))
 rmse_intensive_im_timedum <- sqrt(mean((pmiss_intensive_im_timedum$m.1.probability - pmiss_intensive_im_obs$m)^2))
 
-rmse_intensive_im_timelin
-rmse_intensive_im_timequad
-rmse_intensive_im_timedum
+miss_fit <- data.frame(
+  RMSE   = round(c(rmse_intensive_im_timelin, rmse_intensive_im_timequad, rmse_intensive_im_timedum), 3),
+  Min    = round(c(
+    min(pmiss_intensive_im_timelin$m.1.probability   - pmiss_intensive_im_obs$m),
+    min(pmiss_intensive_im_timequad$m.1.probability  - pmiss_intensive_im_obs$m),
+    min(pmiss_intensive_im_timedum$m.1.probability   - pmiss_intensive_im_obs$m)), 3),
+  Median = round(c(
+    median(pmiss_intensive_im_timelin$m.1.probability   - pmiss_intensive_im_obs$m),
+    median(pmiss_intensive_im_timequad$m.1.probability  - pmiss_intensive_im_obs$m),
+    median(pmiss_intensive_im_timedum$m.1.probability   - pmiss_intensive_im_obs$m)), 3),
+  Mean   = round(c(
+    mean(pmiss_intensive_im_timelin$m.1.probability   - pmiss_intensive_im_obs$m),
+    mean(pmiss_intensive_im_timequad$m.1.probability  - pmiss_intensive_im_obs$m),
+    mean(pmiss_intensive_im_timedum$m.1.probability   - pmiss_intensive_im_obs$m)), 3),
+  Max    = round(c(
+    max(pmiss_intensive_im_timelin$m.1.probability   - pmiss_intensive_im_obs$m),
+    max(pmiss_intensive_im_timequad$m.1.probability  - pmiss_intensive_im_obs$m),
+    max(pmiss_intensive_im_timedum$m.1.probability   - pmiss_intensive_im_obs$m)), 3),
+  row.names = c("Linear", "Quadratic", "Dummy")
+)
 
-# summarize difference between marginal vs. observed probabilities
-summary(pmiss_intensive_im_timelin$m.1.probability - pmiss_intensive_im_obs$m)
-summary(pmiss_intensive_im_timequad$m.1.probability - pmiss_intensive_im_obs$m)
-summary(pmiss_intensive_im_timedum$m.1.probability - pmiss_intensive_im_obs$m)
+miss_fit
 
 #------------------------------------------------------------------------------#
 # SHARED PARAMETER ----

@@ -203,10 +203,8 @@ pgrowth_im_quad <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
-pgrowth_im_obs
-pgrowth_im_dum
-pgrowth_im_lin
-pgrowth_im_quad
+pgrowth_im_combined <- (pgrowth_im_obs | pgrowth_im_lin) / (pgrowth_im_quad | pgrowth_im_dum)
+pgrowth_im_combined
 
 # compute marginal probabilities (average individual probabilities) by time and group
 pmiss_growth_im_obs <- aggregate(m ~ time + group, data = growth_im_timedum@average_imp, mean)
@@ -215,18 +213,32 @@ pmiss_growth_im_timelin <- aggregate(m.1.probability ~ time + group, data = grow
 pmiss_growth_im_timequad <- aggregate(m.1.probability ~ time + group, data = growth_im_timequad@average_imp, mean)
 
 # compute rmse of marginal vs. observed probabilities
-rmse_growth_i_timedum <- sqrt(mean((pmiss_growth_im_timedum$m.1.probability - pmiss_growth_im_obs$m)^2))
-rmse_growth_i_timelin <- sqrt(mean((pmiss_growth_im_timelin$m.1.probability - pmiss_growth_im_obs$m)^2))
-rmse_growth_i_timequad <- sqrt(mean((pmiss_growth_im_timequad$m.1.probability - pmiss_growth_im_obs$m)^2))
+rmse_growth_im_timedum <- sqrt(mean((pmiss_growth_im_timedum$m.1.probability - pmiss_growth_im_obs$m)^2))
+rmse_growth_im_timelin <- sqrt(mean((pmiss_growth_im_timelin$m.1.probability - pmiss_growth_im_obs$m)^2))
+rmse_growth_im_timequad <- sqrt(mean((pmiss_growth_im_timequad$m.1.probability - pmiss_growth_im_obs$m)^2))
 
-rmse_growth_i_timedum
-rmse_growth_i_timelin
-rmse_growth_i_timequad
+miss_fit <- data.frame(
+  RMSE   = round(c(rmse_growth_im_timelin, rmse_growth_im_timequad, rmse_growth_im_timedum), 3),
+  Min    = round(c(
+    min(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
+    min(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
+    min(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+  Median = round(c(
+    median(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
+    median(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
+    median(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+  Mean   = round(c(
+    mean(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
+    mean(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
+    mean(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+  Max    = round(c(
+    max(pmiss_growth_im_timelin$m.1.probability   - pmiss_growth_im_obs$m),
+    max(pmiss_growth_im_timequad$m.1.probability  - pmiss_growth_im_obs$m),
+    max(pmiss_growth_im_timedum$m.1.probability   - pmiss_growth_im_obs$m)), 3),
+  row.names = c("Linear", "Quadratic", "Dummy")
+)
 
-# summarize difference between marginal vs. observed probabilities
-summary(pmiss_growth_im_timedum$m.1.probability - pmiss_growth_im_obs$m)
-summary(pmiss_growth_im_timelin$m.1.probability - pmiss_growth_im_obs$m)
-summary(pmiss_growth_im_timequad$m.1.probability - pmiss_growth_im_obs$m)
+miss_fit
 
 #------------------------------------------------------------------------------#
 # SHARED PARAMETER MODEL ----

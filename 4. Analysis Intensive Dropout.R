@@ -399,8 +399,7 @@ intensive_d_wcx <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     d = ifelse(time < 7, 0, 1);
-    alpha_res = alpha - (g0a + g1a*group);
-    m ~ intercept@-3 d*alpha_res d*omega d*x.mean | intercept@0;
+    m ~ intercept@-3 d*alpha d*omega d*x.mean | intercept@0;
     { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
   parameters = '
     adiff = g1a; 
@@ -600,8 +599,7 @@ intensive_d_dis <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     d = ifelse(time < 7, 0, 1);
-    alpha_res = alpha - (g0a + g1a*group);
-    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d alpha_res*d omega*d | intercept@0;
+    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d alpha*d omega*d | intercept@0;
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 

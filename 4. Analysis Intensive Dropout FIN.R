@@ -200,6 +200,9 @@ pintensive_do_quad <- plot_means(m.1.probability ~ time | group,
     scale_linetype_manual(values = c("dashed", "solid")) +
     geom_line(linewidth = .25)
 
+pintensive_do_combined <- (pintensive_do_obs | pintensive_do_lin) / (pintensive_do_quad | pintensive_do_dum)
+pintensive_do_combined
+
 # compute marginal probabilities (average individual probabilities) by time and group
 pmiss_intensive_do_obs <- aggregate(m ~ time + group, data = intensive_do_timedum@average_imp, mean)
 pmiss_intensive_do_timedum <- aggregate(m.1.probability ~ time + group, data = intensive_do_timedum@average_imp, mean)
@@ -211,14 +214,28 @@ rmse_intensive_do_timedum <- sqrt(mean((pmiss_intensive_do_timedum$m.1.probabili
 rmse_intensive_do_timelin <- sqrt(mean((pmiss_intensive_do_timelin$m.1.probability - pmiss_intensive_do_obs$m)^2))
 rmse_intensive_do_timequad <- sqrt(mean((pmiss_intensive_do_timequad$m.1.probability - pmiss_intensive_do_obs$m)^2))
 
-rmse_intensive_do_timedum
-rmse_intensive_do_timelin
-rmse_intensive_do_timequad
+miss_fit <- data.frame(
+  RMSE   = round(c(rmse_intensive_do_timelin, rmse_intensive_do_timequad, rmse_intensive_do_timedum), 3),
+  Min    = round(c(
+    min(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
+    min(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
+    min(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+  Median = round(c(
+    median(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
+    median(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
+    median(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+  Mean   = round(c(
+    mean(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
+    mean(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
+    mean(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+  Max    = round(c(
+    max(pmiss_intensive_do_timelin$m.1.probability   - pmiss_intensive_do_obs$m),
+    max(pmiss_intensive_do_timequad$m.1.probability  - pmiss_intensive_do_obs$m),
+    max(pmiss_intensive_do_timedum$m.1.probability   - pmiss_intensive_do_obs$m)), 3),
+  row.names = c("Linear", "Quadratic", "Dummy")
+)
 
-# summarize difference between marginal vs. observed probabilities
-summary(pmiss_intensive_do_timedum$m.1.probability - pmiss_intensive_do_obs$m)
-summary(pmiss_intensive_do_timelin$m.1.probability - pmiss_intensive_do_obs$m)
-summary(pmiss_intensive_do_timequad$m.1.probability - pmiss_intensive_do_obs$m)
+miss_fit
 
 #------------------------------------------------------------------------------#
 # SHARED PARAMETER ----
@@ -350,8 +367,7 @@ intensive_do_spx <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     d = ifelse(time < 7, 0, 1);
-    alpha_res = alpha - (g0a + g1a*group);
-    m ~ intercept@-3 d*alpha_res d*omega d*x.mean | intercept@0;
+    m ~ intercept@-3 d*alpha d*omega d*x.mean | intercept@0;
     { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
   parameters = '
     adiff = g1a; 
@@ -537,8 +553,7 @@ intensive_do_dis <- rblimp(
     var(y) ~ intercept@omega;
     missingness:
     d = ifelse(time < 7, 0, 1);
-    alpha_res = alpha - (g0a + g1a*group);
-    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d alpha_res*d omega*d | intercept@0;
+    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d alpha*d omega*d | intercept@0;
     { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
     adiff = g1a; 
