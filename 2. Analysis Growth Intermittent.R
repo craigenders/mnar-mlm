@@ -18,7 +18,7 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-intermittent copy.csv'
+filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-intermittent-m.csv'
 
 # create data frame from github data
 growth_i <- read.csv(filepath1, stringsAsFactors = T)

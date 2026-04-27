@@ -1,0 +1,1075 @@
+---
+title: "Intensive Data with Intermittent Missingness"
+author: "craig"
+date: "2026-04-26"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 3
+    theme: cosmo
+    highlight: haddock
+    code_folding: show
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: '4'
+editor_options:
+  chunk_output_type: console
+  markdown:
+    wrap: 72
+---
+
+```{css, echo=FALSE}
+body {
+  font-size: 18px;
+}
+pre {
+  font-size: 15.6px;
+  white-space: pre;
+  overflow-x: visible;
+}
+pre code {
+  white-space: pre;
+  word-wrap: normal;
+}
+.main-container {
+  max-width: 1500px !important;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  comment = "",
+  fig.width = 10,
+  fig.height = 6)
+
+options(scipen = 999)
+```
+
+This supplement presents `rblimp` R code and annotated output for the
+data analysis results reported in "Missing not at Random Analyses for
+Multilevel Data." The OSF repository at
+[https://osf.io/yegcf/](https://osf.io/yegcf/) includes the paper and
+supporting documents, and the GitHub repository at
+[https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)
+includes executable R and Blimp Studio scripts for all examples.
+
+------------------------------------------------------------------------
+
+## rblimp Arguments
+
+The table below summarizes the major `rblimp` function arguments used
+throughout this supplement. Each argument corresponds to a command in
+the Blimp Studio scripts provided on the project's public GitHub site
+([https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)).
+Readers unfamiliar with `rblimp` may find it helpful to use this table
+as a reference while working through the analysis examples.
+
+| Argument     | Description                                                            |
+|:-------------|:-----------------------------------------------------------------------|
+| `data`       | R data frame containing all variables                                  |
+| `clusterid`  | Level-2 identifier variable                                            |
+| `timeid`     | Integer variable indexing repeated measurement occasions               |
+| `dropout`    | Creates the missingness or dropout indicator                           |
+| `latent`     | Defines level-2 latent variables (random intercepts and slopes)        |
+| `fixed`      | Completely observed predictor variables (speeds computation)           |
+| `center`     | Specifies latent group mean centering for level-1 predictors           |
+| `model`      | Specifies the focal outcome and missingness model regression equations |
+| `parameters` | Defines custom derived quantities computed from model parameters       |
+| `nimps`      | Number of imputations (required for computing model-predicted probabilities for graphing) |
+| `seed`       | Integer random number seed for reproducibility                         |
+| `chains`     | Number of independent MCMC chains (4 is also the default)             |
+| `burn`       | Number of warm-up iterations per chain (discarded before estimation)   |
+| `iter`       | Number of post-burn-in iterations used to compute parameter summaries  |
+
+------------------------------------------------------------------------
+
+## Reading the Output
+
+The table below describes each section of the `rblimp` output in the
+order it appears. Detailed descriptions of the BURN-IN RHAT and OUTCOME
+MODEL ESTIMATES sections follow the table.
+
+| Output Section                      | Description                                                                                                                    |
+|:------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------|
+| `BURN-IN RHAT CONVERGENCE OUTPUT`   | Assesses whether the MCMC warm-up period is sufficiently long; see detailed description below                                  |
+| `DATA INFORMATION`                  | Gives information about the sample size and missing data rates                                                                 |
+| `MODEL INFORMATION`                 | Reports the number of parameters and summarizes the fitted regression equations                                                |
+| `MODEL FIT`                         | Reports DIC and WAIC and custom Wald tests, if specified                                                                       |
+| `IMPUTED DATA SUMMARIES`            | Reports summary statistics for every manifest and latent variable in the model                                                 |
+| `CORRELATIONS AMONG RESIDUALS`      | Reports correlations between pairs of residuals for a model's outcome variables                                                |
+| `OUTCOME MODEL ESTIMATES`           | Parameter estimates, standard errors, credible intervals, and diagnostics; see detailed description below                      |
+| `GENERATED PARAMETERS`              | Displays auxiliary parameters that are a function of the estimated parameters (e.g., mean difference, standardized mean difference) |
+
+### BURN-IN RHAT Convergence Diagnostic
+
+The potential scale reduction factor (PSRF) or Rhat convergence
+diagnostic appears near the top of the output. The PSRF assesses
+whether the MCMC warm-up period is sufficiently long for the algorithm
+to converge, which occurs when independent chains produce similar
+parameter estimates. Smaller values closer to the theoretical minimum
+of 1 are better, and values below 1.05 (Asparouhov & Muthén, 2010) or
+1.10 (Gelman et al., 2014) are generally considered adequate. The
+"Highest PSR" column displays the highest (worst) value across all
+model parameters. This value should be less than 1.05 (or 1.10) by the
+end of the burn-in period (the final row of the table). If the highest
+PSRF is too large, increase the number of burn-in iterations (specified
+using the `burn` argument).
+
+### Outcome Model Estimates
+
+Each outcome variable has its own summary table containing raw and
+standardized coefficients, variances and standard deviations, and
+variance explained effect sizes. The Estimate column gives the point
+estimates (posterior median), the StdDev column displays "Bayesian
+standard errors" (posterior standard deviations), the 2.5% and 97.5%
+columns display 95% credible intervals. The ChiSq and PValue columns
+are frequentist significance tests (Wald chi-square values).
+
+The rightmost column labeled N_Eff is the effective sample size (ESS)
+diagnostic. The ESS provides a gauge of whether the post-warm-up
+parameter summaries have sufficient precision. Numerically, it reflects
+the effective number of MCMC iterations (the "sample size") that
+contribute to these summaries after accounting for autocorrelation in
+the sampling process. Values above 100 are generally considered
+adequate (Gelman et al., 2014, p. 287). Inadequate PSRF and ESS values
+indicate that more iterations are needed.
+
+The tables for alpha (random intercept), beta (random slope), and omega
+(random within-person log-variation) summarize the focal model's
+level-2 regression equations and random coefficient variation. The
+table for y displays the level-1 (within-person) residual variance.
+
+The table for m displays the missingness model parameters. The
+missingness model's pseudo-R2 (the proportion of variance explained on
+the latent response metric) is often the clearest indicator of model
+quality. Values around .70 or higher suggest that the predictors almost
+perfectly classify dropouts from completers, a condition known as
+near-separation. Very large effect sizes almost always signal that a
+model lacks support from the data.
+
+------------------------------------------------------------------------
+
+## Setup
+
+### Load Packages
+
+```{r packages}
+library(ggplot2)
+library(patchwork)
+library(rblimp)
+```
+
+### Read Data
+
+```{r load-data}
+filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-intermittent.csv'
+
+intensive_intermittent <- read.csv(filepath, stringsAsFactors = T)
+```
+
+### Source Plotting Functions
+
+```{r source-functions}
+source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
+source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
+```
+
+### Helper Functions
+
+```{r helper-functions}
+# function to extract key parameter estimates
+extract_intensive_params <- function(object, method) {
+
+  tab <- object@estimates
+
+  rows <- c(
+    "alpha ~ Intercept",
+    "beta ~ Intercept",
+    "alpha ~ group",
+    "beta ~ group",
+    "alpha residual variance",
+    "beta residual variance",
+    "Cor( alpha, beta )",
+    "y Variance Q50%",
+    "omega ~ Intercept",
+    "omega residual variance",
+    "Cor( alpha, omega )",
+    "Cor( beta, omega )",
+    "Parameter: diff",
+    "Parameter: d_diff",
+    "m R2: Coefficients"
+  )
+
+  res <- do.call(rbind, lapply(rows, function(r) {
+    if (r %in% rownames(tab)) {
+      round(tab[r, c("Estimate", "StdDev"), drop = FALSE], 2)
+    } else {
+      data.frame(Estimate = NA_real_, StdDev = NA_real_, row.names = r)
+    }
+  }))
+
+  rownames(res) <- c(
+    "Icept (G = 0)",
+    "Slope (G = 0)",
+    "Icept Diff.",
+    "Slope Diff.",
+    "Var(Icept)",
+    "Var(Slope)",
+    "Cor(Icept, Slope)",
+    "Var(Residual)",
+    "Icept Log-Var",
+    "Var(Log-Var)",
+    "Cor(Icept, Log-Var)",
+    "Cor(Log-Var, Slope)",
+    "Mean Diff.",
+    "Std. Diff.",
+    "Pseudo-Rsq"
+  )
+
+  colnames(res) <- c(
+    paste0("Est_", method),
+    paste0("SD_", method)
+  )
+
+  res
+}
+
+# function to extract convergence diagnostics
+extract_convergence <- function(object, method) {
+
+  neff <- object@estimates[, "N_Eff"]
+  neff <- neff[is.finite(neff)]
+
+  psr_row <- as.numeric(object@psr[20, ])
+  psr_row <- psr_row[is.finite(psr_row)]
+
+  data.frame(
+    Min_Neff = round(min(neff),    3),
+    Max_Neff = round(max(neff),    3),
+    Min_PSR  = round(min(psr_row), 3),
+    Max_PSR  = round(max(psr_row), 3),
+    row.names = method
+  )
+}
+```
+
+------------------------------------------------------------------------
+
+# Model 1: CMAR
+
+Model 1 fits a two-level growth curve under the conditionally missing
+at random (CMAR) assumption. This model serves as the baseline against
+which the MNAR models are compared.
+
+```{r model1, cache=TRUE}
+model1 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(model1)
+```
+
+------------------------------------------------------------------------
+
+# Missingness Probabilities
+
+## ICC
+
+The model in this section fits an unconditional two-level model for the
+missingness indicator to estimate the proportion of missing data
+variability attributable to stable between-person differences.
+
+```{r icc-missingness, cache=TRUE}
+icc_missingness <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  model = 'm ~ intercept | intercept;',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(icc_missingness)
+```
+
+## Linear Missingness
+
+The model in this section regresses the missingness indicator on time,
+group, and their interaction to assess whether missing data rates change
+linearly across occasions and whether that trend differs by group.
+
+```{r time-linear, cache=TRUE}
+time_linear <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'time group',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept time group time*group | intercept;',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(time_linear)
+```
+
+## Quadratic Missingness
+
+The model in this section extends the linear trend by adding a
+quadratic time term, allowing missingness rates to accelerate or
+decelerate across occasions.
+
+*Important features of the missingness model:*
+
+- Squared terms are specified using `^2`.
+
+```{r time-quadratic, cache=TRUE}
+time_quadratic <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'time group',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept time time^2 group time*group time^2*group | intercept;',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(time_quadratic)
+```
+
+## Dummy-Coded Missingness
+
+The model in this section uses dummy codes for each time point to
+estimate occasion-specific missingness probabilities freely, without
+imposing a functional form on how rates change over time.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+```{r time-dummy, cache=TRUE}
+time_dummy <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'time group',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  waldtest = '
+    m ~ intercept group | intercept;
+    { t in 1:19 } : m ~ (time == [t]);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(time_dummy)
+```
+
+## Missingness Probability Plots
+
+```{r miss-plots}
+ymax <- .35
+ymin <- 0
+
+plot_pmiss_obs <- plot_means(m ~ time | group,
+    model = time_dummy,
+    ylab = "Probability",
+    title = "Observed Probabilities",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin, ymax) + xlim(0, 21) +
+    theme(legend.position = "top", legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
+
+plot_pmiss_linear <- plot_means(m.1.probability ~ time | group,
+    model = time_linear,
+    ylab = "Probability",
+    title = "Linear Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin, ymax) + xlim(0, 21) +
+    theme(legend.position = "top", legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
+
+plot_pmiss_quadratic <- plot_means(m.1.probability ~ time | group,
+    model = time_quadratic,
+    ylab = "Probability",
+    title = "Quadratic Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin, ymax) + xlim(0, 21) +
+    theme(legend.position = "top", legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
+
+plot_pmiss_dummy <- plot_means(m.1.probability ~ time | group,
+    model = time_dummy,
+    ylab = "Probability",
+    title = "Dummy-Coded Time",
+    group_labels = c("0" = "0", "1" = "1")) + ylim(ymin, ymax) + xlim(0, 21) +
+    theme(legend.position = "top", legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_line(linewidth = .25)
+
+plot_pmiss <- (plot_pmiss_obs | plot_pmiss_linear) / (plot_pmiss_quadratic | plot_pmiss_dummy)
+plot_pmiss
+```
+
+## Probability Comparison
+
+```{r miss-fit}
+pmiss_obs       <- aggregate(m ~ time + group,               data = time_dummy@average_imp,     mean)
+pmiss_linear    <- aggregate(m.1.probability ~ time + group, data = time_linear@average_imp,    mean)
+pmiss_quadratic <- aggregate(m.1.probability ~ time + group, data = time_quadratic@average_imp, mean)
+pmiss_dummy     <- aggregate(m.1.probability ~ time + group, data = time_dummy@average_imp,     mean)
+
+rmse_pmiss_linear    <- sqrt(mean((pmiss_linear$m.1.probability    - pmiss_obs$m)^2))
+rmse_pmiss_quadratic <- sqrt(mean((pmiss_quadratic$m.1.probability - pmiss_obs$m)^2))
+rmse_pmiss_dummy     <- sqrt(mean((pmiss_dummy$m.1.probability     - pmiss_obs$m)^2))
+
+miss_fit <- data.frame(
+  RMSE   = round(c(rmse_pmiss_linear, rmse_pmiss_quadratic, rmse_pmiss_dummy), 3),
+  Min    = round(c(
+    min(pmiss_linear$m.1.probability    - pmiss_obs$m),
+    min(pmiss_quadratic$m.1.probability - pmiss_obs$m),
+    min(pmiss_dummy$m.1.probability     - pmiss_obs$m)), 3),
+  Median = round(c(
+    median(pmiss_linear$m.1.probability    - pmiss_obs$m),
+    median(pmiss_quadratic$m.1.probability - pmiss_obs$m),
+    median(pmiss_dummy$m.1.probability     - pmiss_obs$m)), 3),
+  Mean   = round(c(
+    mean(pmiss_linear$m.1.probability    - pmiss_obs$m),
+    mean(pmiss_quadratic$m.1.probability - pmiss_obs$m),
+    mean(pmiss_dummy$m.1.probability     - pmiss_obs$m)), 3),
+  Max    = round(c(
+    max(pmiss_linear$m.1.probability    - pmiss_obs$m),
+    max(pmiss_quadratic$m.1.probability - pmiss_obs$m),
+    max(pmiss_dummy$m.1.probability     - pmiss_obs$m)), 3),
+  row.names = c("Linear", "Quadratic", "Dummy")
+)
+```
+
+```{r miss-fit-display, echo=FALSE}
+knitr::kable(miss_fit, caption = "Missingness Model Fit")
+```
+
+------------------------------------------------------------------------
+
+# Model 2: Shared Parameter
+
+Model 2 is a shared parameter model that links the probability of
+missingness to each person's random intercept and slope, so that
+individuals with higher or lower trajectories have systematically
+different rates of missing data.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+```{r model2, cache=TRUE}
+model2 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group alpha omega | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(model2)
+```
+
+------------------------------------------------------------------------
+
+# Model 3: Shared Parameter
+
+Model 3 extends the shared parameter model by adding quadratic terms
+for the random intercept and slope in the missingness equation,
+allowing for nonlinear dependence of missingness on trajectory
+characteristics.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Squared terms are specified using `^2`.
+
+```{r model3, cache=TRUE}
+model3 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group alpha alpha^2 omega omega^2 | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(model3)
+```
+
+------------------------------------------------------------------------
+
+# Model 4: Shared Parameter
+
+Model 4 reformulates the shared parameter model using random intercept
+and slope residuals rather than raw latent variable values, separating
+the MNAR mechanism into a component that is orthogonal to the grouping
+variable.
+
+*Important features of the missingness model:*
+
+- Definition variables define the random effect residuals; these
+  expressions are substituted into the missingness model to make the
+  specification more compact.
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+```{r model4, cache=TRUE}
+model4 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    alpha_res = alpha - (g0a + g1a*group);
+    m ~ intercept group alpha_res omega | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(model4)
+```
+
+------------------------------------------------------------------------
+
+# Model 5: Shared Parameter
+
+Model 5 extends the shared parameter model by adding level-2 latent
+group means for the predictor, allowing missingness to depend on both
+the outcome and the covariate.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Level-2 latent group means are added by appending `.mean` to the
+  covariate's name.
+
+```{r model5, cache=TRUE}
+model5 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group alpha omega x.mean | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(model5)
+```
+
+------------------------------------------------------------------------
+
+# Model 6: Selection Model
+
+Model 6 is a Diggle-Kenward selection model that conditions the
+probability of missingness on the current and lagged outcome values.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the
+  model.
+
+```{r model6, cache=TRUE}
+model6 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group y y.lag | intercept;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 25000,
+  iter = 25000)
+
+output(model6)
+```
+
+------------------------------------------------------------------------
+
+# Model 7: Selection Model
+
+Model 7 extends the Diggle-Kenward model by adding a quadratic term for
+the current outcome, allowing for nonlinear dependence of missingness on
+outcome values. This model uses `burn = 50000` and `iter = 50000` to
+achieve adequate convergence.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the
+  model.
+- Squared terms are specified using `^2`.
+
+```{r model7, cache=TRUE}
+model7 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group y y^2 y.lag | intercept;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 50000,
+  iter = 50000)
+
+output(model7)
+```
+
+------------------------------------------------------------------------
+
+# Model 8: Selection Model
+
+Model 8 reformulates the Diggle-Kenward model using within-person
+residuals (outcomes centered at the latent person means) rather than
+raw outcome values in the missingness equation. This model uses
+`burn = 75000` and `iter = 75000` to achieve adequate convergence.
+
+*Important features of the missingness model:*
+
+- Definition variables define the centered outcome variable
+  (within-person deviations); this expression is substituted into the
+  missingness model to make the specification more compact.
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the
+  model.
+
+```{r model8, cache=TRUE}
+model8 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group (y - alpha) (y.lag - alpha) | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 75000,
+  iter = 75000)
+
+output(model8)
+```
+
+------------------------------------------------------------------------
+
+# Model 9: Selection Model
+
+Model 9 extends the Diggle-Kenward model by adding the focal model's
+covariate (X) and its lag as predictors, allowing missingness to depend
+on both the outcome and the covariate. This model uses `burn = 50000`
+and `iter = 50000` to achieve adequate convergence.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the
+  model.
+- In order to use the `.lag` function, the covariate (X) requires its
+  own empty model and explicit latent group means (random intercepts).
+
+```{r model9, cache=TRUE}
+model9 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega xmeans',
+  fixed = 'group time',
+  model = '
+    level2:
+    xmeans ~ intercept;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    x ~ intercept@xmeans;
+    y ~ intercept@alpha (x - xmeans)@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group y y.lag x x.lag | intercept;
+    { t in 1:19} : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 50000,
+  iter = 50000)
+
+output(model9)
+```
+
+------------------------------------------------------------------------
+
+# Model 10: Combined Model
+
+Model 10 is a disaggregated model that combines elements of both
+frameworks, conditioning missingness on trajectory characteristics
+(intercept and slope) and within-person residuals simultaneously. This
+model uses `burn = 75000` and `iter = 75000` to achieve adequate
+convergence.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the
+  model.
+- Centered outcomes are created by subtracting the random intercepts
+  from the outcome and its lag.
+
+```{r model10, cache=TRUE}
+model10 <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    m ~ intercept group (y - alpha) (y.lag - alpha) alpha omega | intercept;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*group;',
+  parameters = '
+    diff = g1a;
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  chains = 4,
+  burn = 75000,
+  iter = 75000)
+
+output(model10)
+```
+
+------------------------------------------------------------------------
+
+# Summary Tables
+
+## Parameter Estimates
+
+```{r extract-params, cache=TRUE, dependson=c("model1","model2","model3","model4","model5","model6","model7","model8","model9","model10")}
+table_summary <- cbind(
+  extract_intensive_params(model1,  "M1"),
+  extract_intensive_params(model2,  "M2"),
+  extract_intensive_params(model3,  "M3"),
+  extract_intensive_params(model4,  "M4"),
+  extract_intensive_params(model5,  "M5"),
+  extract_intensive_params(model6,  "M6"),
+  extract_intensive_params(model7,  "M7"),
+  extract_intensive_params(model8,  "M8"),
+  extract_intensive_params(model9,  "M9"),
+  extract_intensive_params(model10, "M10")
+)
+```
+
+```{r table-summary-display, echo=FALSE, dependson="extract-params"}
+knitr::kable(table_summary, caption = "Parameter Estimates")
+```
+
+## Effect Sizes
+
+```{r extract-diff, cache=TRUE, dependson="extract-params"}
+mean_row <- table_summary["Mean Diff.", ]
+std_row  <- table_summary["Std. Diff.", ]
+
+methods_short <- paste0("M", 1:10)
+methods_long  <- paste0("Model ", 1:10)
+
+table_diff <- do.call(rbind, lapply(seq_along(methods_short), function(i) {
+  m <- methods_short[i]
+  c(
+    Mean_Diff     = unname(mean_row[paste0("Est_", m)]),
+    SD_Mean_Diff  = unname(mean_row[paste0("SD_",  m)]),
+    Std_Mean_Diff = unname(std_row[paste0("Est_",  m)]),
+    SD_Std_Mean   = unname(std_row[paste0("SD_",   m)])
+  )
+}))
+rownames(table_diff) <- methods_long
+table_diff <- as.data.frame(table_diff)
+```
+
+```{r table-diff-display, echo=FALSE, dependson="extract-diff"}
+knitr::kable(table_diff, caption = "Effect Sizes")
+```
+
+## Convergence Diagnostics
+
+```{r extract-conv, cache=TRUE, dependson=c("model1","model2","model3","model4","model5","model6","model7","model8","model9","model10")}
+table_diag <- rbind(
+  extract_convergence(model1,  "Model 1"),
+  extract_convergence(model2,  "Model 2"),
+  extract_convergence(model3,  "Model 3"),
+  extract_convergence(model4,  "Model 4"),
+  extract_convergence(model5,  "Model 5"),
+  extract_convergence(model6,  "Model 6"),
+  extract_convergence(model7,  "Model 7"),
+  extract_convergence(model8,  "Model 8"),
+  extract_convergence(model9,  "Model 9"),
+  extract_convergence(model10, "Model 10")
+)
+
+table_diag$Iterations <- c(
+  nrow(model1@iterations),
+  nrow(model2@iterations),
+  nrow(model3@iterations),
+  nrow(model4@iterations),
+  nrow(model5@iterations),
+  nrow(model6@iterations),
+  nrow(model7@iterations),
+  nrow(model8@iterations),
+  nrow(model9@iterations),
+  nrow(model10@iterations)
+)
+```
+
+```{r table-diag-display, echo=FALSE, dependson="extract-conv"}
+knitr::kable(table_diag, caption = "Convergence Diagnostics")
+```
+
+------------------------------------------------------------------------

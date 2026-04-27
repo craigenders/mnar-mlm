@@ -1,0 +1,39 @@
+BURN-IN RHAT CONVERGENCE DIAGNOSTIC OUTPUT:
+
+The potential scale reduction factor (PSRF) or Rhat convergence diagnostic appears near the top of the output.The PSRF assesses whether the MCMC warm-up period is sufficiently long for the algorithm to converge, which occurs when independent chains produce similar parameter estimates. Smaller values closer to the theoretical minimum of 1 are better, and values below 1.05 (Asparouhov & Muthén, 2010) or 1.10 (Gelman et al., 2014) are generally considered adequate. The “Highest PSR” column displays the highest (worst) value across all model parameters. This value should be less than 1.05 (or 1.10) by the end of the burn-in period (the final row of the table). If the highest PSRF is to large, increase the number of burn-in iterations (specified using the BURN command).
+
+DATA INFORMATION:
+
+Gives information about the sample size and missing data rates.
+
+MODEL INFORMATION:
+
+Reports the number of parameters and summarizes the fitted regression equations.
+
+MODEL FIT: 
+
+Reports DIC and WAIC and custom Wald tests, if specified.
+
+IMPUTED DATA SUMMARIES:
+
+Reports summary statistics for every manifest and latent variable in the model.
+
+CORRELATIONS AMONG RESIDUALS:
+
+Reports correlations between pairs of residuals for a model’s outcome variables.
+
+
+OUTCOME MODEL ESTIMATES:
+
+
+Each outcome variable has its own summary table containing raw and standardized coefficients, variances and standard deviations, and variance explained effect sizes. The Estimate column gives the point estimates (posterior median), the StdDev column displays “Bayesian standard errors” (posterior standard deviations), the 2.5% and 97.5% columns display 95% credible intervals. The ChiSq and PValue columns are frequentist significance tests (Wald chi-square values).
+
+The rightmost column labeled N_Eff is the effective sample size (ESS) diagnostic. The ESS provides a gauge of whether the post-warm-up parameter summaries have sufficient precision. Numerically, it reflects the effective number of MCMC iterations (the "sample size") that contribute to these summaries after accounting for autocorrelation in the sampling process. Values above 100 generally considered adequate (Gelman et al., 2014, p. 287). Inadequate PSRF and ESS values indicate that more iterations are needed. 
+
+The tables for alpha (random intercept), beta (random slope), and omega (random within-person log-variation) summarize focal model's level-2 regression equations and random coefficient variation. The table for y displays the level-1 (within-person) residual variance. 
+
+The table for m displays the missingness model parameters. The missingness model’s pseudo-R2 (the proportion of variance explained on the latent response metric) is often the clearest indicator of model quality. Values around .70 or higher suggest that the predictors almost perfectly classify dropouts from completers, a condition known as near-separation. Very large effect sizes almost always signal that a model lacks support from the data. 
+
+GENERATED PARAMETERS:
+
+Displays auxiliary parameters that are a function of the estimated parameters. In this example, the mean difference and standardized mean difference are auxiliary parameters.

@@ -1,0 +1,988 @@
+================================================================================
+GROWTH MODEL LABELS, DROPOUT
+================================================================================
+
+------------------------------------------------------------------------
+Linear Missingness
+------------------------------------------------------------------------
+
+The model in this section regresses the missingness indicator on time, group,
+and their interaction to assess whether missing data rates change linearly
+across occasions and whether that trend differs by group.
+
+Important features of the missingness model:
+
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+
+
+------------------------------------------------------------------------
+Quadratic Missingness
+------------------------------------------------------------------------
+
+The model in this section extends the linear trend by adding a quadratic time
+term, allowing missingness rates to accelerate or decelerate across occasions.
+
+Important features of the missingness model:
+
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Dummy-Coded Missingness
+------------------------------------------------------------------------
+
+The model in this section uses dummy codes for each time point to estimate
+occasion-specific missingness probabilities freely, without imposing a
+functional form on how rates change over time.
+
+Important features of the missingness model:
+
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 1
+------------------------------------------------------------------------
+
+Model 1 fits a two-level growth curve under the conditionally missing at
+random (CMAR) assumption. This model serves as the baseline against which
+the MNAR models are compared.
+
+
+------------------------------------------------------------------------
+Model 2
+------------------------------------------------------------------------
+
+Model 2 is a shared parameter model that links the probability of missingness
+to each person's random intercept and slope, so that individuals with higher
+or lower trajectories have systematically different rates of missing data.
+Because scores are complete at baseline, the missingness model uses
+interactions with a time-varying dummy code to activate effects at occasions
+with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 3
+------------------------------------------------------------------------
+
+Model 3 extends the shared parameter model by adding quadratic terms for the
+random intercept and slope in the missingness equation, allowing for nonlinear
+dependence of missingness on trajectory characteristics. Because scores are
+complete at baseline, the missingness model uses interactions with a
+time-varying dummy code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 4
+------------------------------------------------------------------------
+
+Model 4 reformulates the shared parameter model using random intercept and
+slope residuals rather than raw latent variable values, separating the MNAR
+mechanism into a component that is orthogonal to the grouping variable.
+Because scores are complete at baseline, the missingness model uses
+interactions with a time-varying dummy code to activate effects at occasions
+with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data.
+- Definition variables also define the random intercept and slope residuals;
+  these expressions are substituted into the missingness model to make the
+  specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 5
+------------------------------------------------------------------------
+
+Model 5 is a Diggle-Kenward selection model that conditions the probability
+of missingness on the current and lagged outcome values. Because scores are
+complete at baseline, the missingness model uses interactions with a
+time-varying dummy code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 6
+------------------------------------------------------------------------
+
+Model 6 extends the Diggle-Kenward model by adding a quadratic term for the
+current outcome, allowing for nonlinear dependence of missingness on outcome
+values. Because scores are complete at baseline, the missingness model uses
+interactions with a time-varying dummy code to activate effects at occasions
+with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 7
+------------------------------------------------------------------------
+
+Model 7 reformulates the Diggle-Kenward model using within-person residuals
+(detrended outcomes with the individual trajectory removed) rather than raw
+outcome values in the missingness equation. Because scores are complete at
+baseline, the missingness model uses interactions with a time-varying dummy
+code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data.
+- Definition variables also define the detrended outcome variables
+  (within-person deviations); these expressions are substituted into the
+  missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 8
+------------------------------------------------------------------------
+
+Model 8 is a disaggregated model that combines elements of both frameworks,
+conditioning missingness on trajectory characteristics (intercept and slope)
+and within-person residuals simultaneously. Because scores are complete at
+baseline, the missingness model uses interactions with a time-varying dummy
+code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data.
+- Definition variables also define the detrended outcome variables
+  (within-person deviations); these expressions are substituted into the
+  missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+================================================================================
+GROWTH MODEL LABELS, INTERMITTENT MISSINGNESS
+================================================================================
+
+------------------------------------------------------------------------
+ICC
+------------------------------------------------------------------------
+
+The model in this section fits an unconditional two-level model for the
+missingness indicator to estimate the proportion of missing data variability
+attributable to stable between-person differences.
+
+
+------------------------------------------------------------------------
+Linear Missingness
+------------------------------------------------------------------------
+
+The model in this section regresses the missingness indicator on time, group,
+and their interaction to assess whether missing data rates change linearly
+across occasions and whether that trend differs by group.
+
+
+------------------------------------------------------------------------
+Quadratic Missingness
+------------------------------------------------------------------------
+
+The model in this section extends the linear trend by adding a quadratic time
+term, allowing missingness rates to accelerate or decelerate across occasions.
+
+Important features of the missingness model:
+
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Dummy-Coded Missingness
+------------------------------------------------------------------------
+
+The model in this section uses dummy codes for each time point to estimate
+occasion-specific missingness probabilities freely, without imposing a
+functional form on how rates change over time.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 1
+------------------------------------------------------------------------
+
+Model 1 fits a two-level growth curve under the conditionally missing at
+random (CMAR) assumption. This model serves as the baseline against which
+the MNAR models are compared.
+
+
+------------------------------------------------------------------------
+Model 2
+------------------------------------------------------------------------
+
+Model 2 is a shared parameter model that links the probability of missingness
+to each person's random intercept and slope, so that individuals with higher
+or lower trajectories have systematically different rates of missing data.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 3
+------------------------------------------------------------------------
+
+Model 3 extends the shared parameter model by adding quadratic terms for the
+random intercept and slope in the missingness equation, allowing for nonlinear
+dependence of missingness on trajectory characteristics.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 4
+------------------------------------------------------------------------
+
+Model 4 reformulates the shared parameter model using random intercept and
+slope residuals rather than raw latent variable values, separating the MNAR
+mechanism into a component that is orthogonal to the grouping variable.
+
+Important features of the missingness model:
+
+- Definition variables define the random intercept and slope residuals; these
+  expressions are substituted into the missingness model to make the
+  specification more compact.
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 5
+------------------------------------------------------------------------
+
+Model 5 is a Diggle-Kenward selection model that conditions the probability
+of missingness on the current and lagged outcome values.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 6
+------------------------------------------------------------------------
+
+Model 6 extends the Diggle-Kenward model by adding a quadratic term for the
+current outcome, allowing for nonlinear dependence of missingness on outcome
+values.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 7
+------------------------------------------------------------------------
+
+Model 7 reformulates the Diggle-Kenward model using within-person residuals
+(detrended outcomes with the individual trajectory removed) rather than raw
+outcome values in the missingness equation.
+
+Important features of the missingness model:
+
+- Definition variables define the detrended outcome variables (within-person
+  deviations); these expressions are substituted into the missingness model
+  to make the specification more compact.
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 8
+------------------------------------------------------------------------
+
+Model 8 is a disaggregated model that combines elements of both frameworks,
+conditioning missingness on trajectory characteristics (intercept and slope)
+and within-person residuals simultaneously.
+
+Important features of the missingness model:
+
+- Definition variables define the detrended outcome variables (within-person
+  deviations); these expressions are substituted into the missingness model
+  to make the specification more compact.
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+================================================================================
+INTENSIVE MODEL LABELS, DROPOUT
+================================================================================
+
+------------------------------------------------------------------------
+Linear Missingness
+------------------------------------------------------------------------
+
+The model in this section regresses the missingness indicator on time, group,
+and their interaction to assess whether missing data rates change linearly
+across occasions and whether that trend differs by group.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+
+
+------------------------------------------------------------------------
+Quadratic Missingness
+------------------------------------------------------------------------
+
+The model in this section extends the linear trend by adding a quadratic time
+term, allowing missingness rates to accelerate or decelerate across occasions.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Dummy-Coded Missingness
+------------------------------------------------------------------------
+
+The model in this section uses dummy codes for each time point to estimate
+occasion-specific missingness probabilities freely, without imposing a
+functional form on how rates change over time.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 1
+------------------------------------------------------------------------
+
+Model 1 fits a two-level growth curve under the conditionally missing at
+random (CMAR) assumption. This model serves as the baseline against which
+the MNAR models are compared.
+
+
+------------------------------------------------------------------------
+Model 2
+------------------------------------------------------------------------
+
+Model 2 is a shared parameter model that links the probability of missingness
+to each person's random intercept and slope, so that individuals with higher
+or lower trajectories have systematically different rates of missing data.
+Because the first seven occasions are complete, the missingness model uses
+interactions with a time-varying dummy code to activate effects at occasions
+with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 3
+------------------------------------------------------------------------
+
+Model 3 extends the shared parameter model by adding quadratic terms for the
+random intercept and slope in the missingness equation, allowing for nonlinear
+dependence of missingness on trajectory characteristics. Because the first
+seven occasions are complete, the missingness model uses interactions with a
+time-varying dummy code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 4
+------------------------------------------------------------------------
+
+Model 4 reformulates the shared parameter model using random intercept and
+slope residuals rather than raw latent variable values, separating the MNAR
+mechanism into a component that is orthogonal to the grouping variable.
+Because the first seven occasions are complete, the missingness model uses
+interactions with a time-varying dummy code to activate effects at occasions
+with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data.
+- Definition variables also define the random effect residuals; these
+  expressions are substituted into the missingness model to make the
+  specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 5
+------------------------------------------------------------------------
+
+Model 5 extends the shared parameter model by adding level-2 latent group
+means for the predictor, allowing missingness to depend on both the outcome
+and the covariate. Because the first seven occasions are complete, the
+missingness model uses interactions with a time-varying dummy code to activate
+effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Level-2 latent group means are added by appending `.mean` to the
+  covariate's name.
+
+
+------------------------------------------------------------------------
+Model 6
+------------------------------------------------------------------------
+
+Model 6 is a Diggle-Kenward selection model that conditions the probability
+of missingness on the current and lagged outcome values. Because the first
+seven occasions are complete, the missingness model uses interactions with a
+time-varying dummy code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 7
+------------------------------------------------------------------------
+
+Model 7 extends the Diggle-Kenward model by adding a quadratic term for the
+current outcome, allowing for nonlinear dependence of missingness on outcome
+values. Because the first seven occasions are complete, the missingness model
+uses interactions with a time-varying dummy code to activate effects at
+occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 8
+------------------------------------------------------------------------
+
+Model 8 reformulates the Diggle-Kenward model using within-person residuals
+(outcomes centered at the latent person means) rather than raw outcome values
+in the missingness equation. Because the first seven occasions are complete,
+the missingness model uses interactions with a time-varying dummy code to
+activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data.
+- Definition variables also define the centered outcome variable
+  (within-person deviations); these expressions are substituted into the
+  missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 9
+------------------------------------------------------------------------
+
+Model 9 extends the Diggle-Kenward model by adding the focal model's
+covariate (X) and its lag as predictors, allowing missingness to depend on
+both the outcome and the covariate. Because the first seven occasions are
+complete, the missingness model uses interactions with a time-varying dummy
+code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- In order to use the `.lag` function, the covariate (X) requires its own
+  empty model and explicit latent group means (random intercepts).
+
+
+------------------------------------------------------------------------
+Model 10
+------------------------------------------------------------------------
+
+Model 10 is a disaggregated model that combines elements of both frameworks,
+conditioning missingness on trajectory characteristics (intercept and slope)
+and within-person residuals simultaneously. Because the first seven occasions
+are complete, the missingness model uses interactions with a time-varying
+dummy code to activate effects at occasions with missing data.
+
+Important features of the missingness model:
+
+- A definition variable creates the time-varying dummy code that activates
+  effects at occasions with missing data; this expression is substituted into
+  the missingness model to make the specification more compact.
+- The `@` symbol fixes parameters at specific numeric values (e.g., -3 for
+  the fixed intercept and 0 for the random intercept variance after the
+  vertical pipe).
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- Centered outcomes are created by subtracting the random intercepts from
+  the outcome and its lag.
+
+
+================================================================================
+INTENSIVE MODEL LABELS, INTERMITTENT MISSINGNESS
+================================================================================
+
+------------------------------------------------------------------------
+ICC
+------------------------------------------------------------------------
+
+The model in this section fits an unconditional two-level model for the
+missingness indicator to estimate the proportion of missing data variability
+attributable to stable between-person differences.
+
+
+------------------------------------------------------------------------
+Linear Missingness
+------------------------------------------------------------------------
+
+The model in this section regresses the missingness indicator on time, group,
+and their interaction to assess whether missing data rates change linearly
+across occasions and whether that trend differs by group.
+
+
+------------------------------------------------------------------------
+Quadratic Missingness
+------------------------------------------------------------------------
+
+The model in this section extends the linear trend by adding a quadratic time
+term, allowing missingness rates to accelerate or decelerate across occasions.
+
+Important features of the missingness model:
+
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Dummy-Coded Missingness
+------------------------------------------------------------------------
+
+The model in this section uses dummy codes for each time point to estimate
+occasion-specific missingness probabilities freely, without imposing a
+functional form on how rates change over time.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 1
+------------------------------------------------------------------------
+
+Model 1 fits a two-level growth curve under the conditionally missing at
+random (CMAR) assumption. This model serves as the baseline against which
+the MNAR models are compared.
+
+
+------------------------------------------------------------------------
+Model 2
+------------------------------------------------------------------------
+
+Model 2 is a shared parameter model that links the probability of missingness
+to each person's random intercept and slope, so that individuals with higher
+or lower trajectories have systematically different rates of missing data.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 3
+------------------------------------------------------------------------
+
+Model 3 extends the shared parameter model by adding quadratic terms for the
+random intercept and slope in the missingness equation, allowing for nonlinear
+dependence of missingness on trajectory characteristics.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 4
+------------------------------------------------------------------------
+
+Model 4 reformulates the shared parameter model using random intercept and
+slope residuals rather than raw latent variable values, separating the MNAR
+mechanism into a component that is orthogonal to the grouping variable.
+
+Important features of the missingness model:
+
+- Definition variables define the random effect residuals; these expressions
+  are substituted into the missingness model to make the specification more
+  compact.
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+
+
+------------------------------------------------------------------------
+Model 5
+------------------------------------------------------------------------
+
+Model 5 extends the shared parameter model by adding level-2 latent group
+means for the predictor, allowing missingness to depend on both the outcome
+and the covariate.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Level-2 latent group means are added by appending `.mean` to the
+  covariate's name.
+
+
+------------------------------------------------------------------------
+Model 6
+------------------------------------------------------------------------
+
+Model 6 is a Diggle-Kenward selection model that conditions the probability
+of missingness on the current and lagged outcome values.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 7
+------------------------------------------------------------------------
+
+Model 7 extends the Diggle-Kenward model by adding a quadratic term for the
+current outcome, allowing for nonlinear dependence of missingness on outcome
+values.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- Squared terms are specified using `^2`.
+
+
+------------------------------------------------------------------------
+Model 8
+------------------------------------------------------------------------
+
+Model 8 reformulates the Diggle-Kenward model using within-person residuals
+(outcomes centered at the latent person means) rather than raw outcome values
+in the missingness equation.
+
+Important features of the missingness model:
+
+- Definition variables define the centered outcome variable (within-person
+  deviations); this expression is substituted into the missingness model to
+  make the specification more compact.
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+
+
+------------------------------------------------------------------------
+Model 9
+------------------------------------------------------------------------
+
+Model 9 extends the Diggle-Kenward model by adding the focal model's
+covariate (X) and its lag as predictors, allowing missingness to depend on
+both the outcome and the covariate.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- In order to use the `.lag` function, the covariate (X) requires its own
+  empty model and explicit latent group means (random intercepts).
+
+
+------------------------------------------------------------------------
+Model 10
+------------------------------------------------------------------------
+
+Model 10 is a disaggregated model that combines elements of both frameworks,
+conditioning missingness on trajectory characteristics (intercept and slope)
+and within-person residuals simultaneously.
+
+Important features of the missingness model:
+
+- Boolean statements create dummy codes as functions of the TIME variable,
+  such that each condition in parentheses returns 1 if TIME = `t` and 0
+  otherwise.
+- A looping structure avoids specifying a separate Boolean statement for
+  each occasion.
+- Appending `.lag` to a variable's name introduces its lag into the model.
+- Centered outcomes are created by subtracting the random intercepts from
+  the outcome and its lag.

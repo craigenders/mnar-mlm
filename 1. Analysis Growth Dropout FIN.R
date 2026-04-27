@@ -31,8 +31,6 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 model1 <- rblimp(
   data = growth_dropout,
   clusterid = 'l2id', 
-  timeid = 'time',
-  dropout = 'm = y (monotone)',
   latent = 'l2id = alpha beta',
   fixed = 'group time',
   model = '
@@ -177,7 +175,7 @@ plot_pmiss_quadratic <- plot_means(m.1.probability ~ time | group,
 plot_pmiss_dummy <- plot_means(m.1.probability ~ time | group, 
     model = time_dummy,
     ylab = "Probability",
-    title = "Dummy Coded Time",
+    title = "Dummy-Coded Time",
     group_labels = c("0" = "0", "1" = "1")) + ylim(ymin,ymax) +
     theme(legend.position = "top",legend.justification = "center") +
     scale_linetype_manual(values = c("dashed", "solid")) +
@@ -481,16 +479,16 @@ extract_growth_params <- function(object, method) {
   }))
   
   rownames(res) <- c(
-    "Intercept (G = 0)",
+    "Icept (G = 0)",
     "Slope (G = 0)",
-    "Intercept Diff.",
+    "Icept Diff.",
     "Slope Diff.",
-    "Var(Intercept)",
+    "Var(Icept)",
     "Var(Slope)",
-    "Cor(Intercept, Slope)",
+    "Cor(Icept, Slope)",
     "Var(Residual)",
     "Mean Diff.",
-    "Std. Mean Diff.",
+    "Std. Diff.",
     "Pseudo-Rsq"
   )
   
@@ -504,37 +502,38 @@ extract_growth_params <- function(object, method) {
 
 # main summary table ----
 table_summary <- cbind(
-  extract_growth_params(model1, "MOD1"),
-  extract_growth_params(model2, "MOD2"),
-  extract_growth_params(model3, "MOD3"),
-  extract_growth_params(model4, "MOD4"),
-  extract_growth_params(model5, "MOD5"),
-  extract_growth_params(model6, "MOD6"),
-  extract_growth_params(model7, "MOD7"),
-  extract_growth_params(model8, "MOD8")
+  extract_growth_params(model1, "M1"),
+  extract_growth_params(model2, "M2"),
+  extract_growth_params(model3, "M3"),
+  extract_growth_params(model4, "M4"),
+  extract_growth_params(model5, "M5"),
+  extract_growth_params(model6, "M6"),
+  extract_growth_params(model7, "M7"),
+  extract_growth_params(model8, "M8")
 )
 table_summary
 
 # mean difference table ----
 
 # extract rows
-mean_row   <- table_summary["Mean Diff.", ]
-std_row    <- table_summary["Std. Mean Diff.", ]
+mean_row <- table_summary["Mean Diff.", ]
+std_row  <- table_summary["Std. Diff.", ]
 
-# get method names
-col_names <- colnames(table_summary)
-methods <- unique(sub("^(Est|SD)_", "", col_names))
+# method names
+methods_short <- paste0("M", 1:8)
+methods_long  <- paste0("Model ", 1:8)
 
 # build table
-table_diff <- do.call(rbind, lapply(methods, function(m) {
+table_diff <- do.call(rbind, lapply(seq_along(methods_short), function(i) {
+  m <- methods_short[i]
   c(
-    Mean_Diff      = mean_row[paste0("Est_", m)],
-    SD_Mean_Diff   = mean_row[paste0("SD_", m)],
-    Std_Mean_Diff  = std_row[paste0("Est_", m)],
-    SD_Std_Mean    = std_row[paste0("SD_", m)]
+    Mean_Diff     = unname(mean_row[paste0("Est_", m)]),
+    SD_Mean_Diff  = unname(mean_row[paste0("SD_",  m)]),
+    Std_Mean_Diff = unname(std_row[paste0("Est_",  m)]),
+    SD_Std_Mean   = unname(std_row[paste0("SD_",   m)])
   )
 }))
-rownames(table_diff) <- methods
+rownames(table_diff) <- methods_long
 table_diff <- as.data.frame(table_diff)
 table_diff
 
@@ -560,14 +559,14 @@ extract_convergence <- function(object, method) {
 
 # build table
 table_diag <- rbind(
-  extract_convergence(model1, "MOD1"),
-  extract_convergence(model2, "MOD2"),
-  extract_convergence(model3, "MOD3"),
-  extract_convergence(model4, "MOD4"),
-  extract_convergence(model5, "MOD5"),
-  extract_convergence(model6, "MOD6"),
-  extract_convergence(model7, "MOD7"),
-  extract_convergence(model8, "MOD8")
+  extract_convergence(model1, "Model 1"),
+  extract_convergence(model2, "Model 2"),
+  extract_convergence(model3, "Model 3"),
+  extract_convergence(model4, "Model 4"),
+  extract_convergence(model5, "Model 5"),
+  extract_convergence(model6, "Model 6"),
+  extract_convergence(model7, "Model 7"),
+  extract_convergence(model8, "Model 8")
 )
 
 # add number of iterations

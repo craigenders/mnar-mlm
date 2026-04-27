@@ -21,7 +21,7 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-dropout copy.csv'
+filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-dropout-m.csv'
 
 # create data frame from github data
 intensive_d <- read.csv(filepath, stringsAsFactors = T)
