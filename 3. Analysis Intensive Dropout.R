@@ -725,15 +725,15 @@ out <- as.data.frame(out)
 # colnames(out) <- c("Mean_Diff", "SD", "Std_Mean_Diff", "SD", "Pseudo_R²")
 
 iter_counts <- c(
-  MAR = nrow(intensive_i_mar@iterations),
-  WC  = nrow(intensive_i_wc@iterations),
-  WCQ = nrow(intensive_i_wcq@iterations),
-  WCR = nrow(intensive_i_wcr@iterations),
-  DK  = nrow(intensive_i_dk@iterations),
-  DKQ = nrow(intensive_i_dkq@iterations),
-  DKR = nrow(intensive_i_dkr@iterations),
-  DKX = nrow(intensive_i_dkx@iterations),
-  DIS = nrow(intensive_i_dis@iterations)
+  MAR = nrow(intensive_d_mar@iterations),
+  WC  = nrow(intensive_d_wc@iterations),
+  WCQ = nrow(intensive_d_wcq@iterations),
+  WCR = nrow(intensive_d_wcr@iterations),
+  DK  = nrow(intensive_d_dk@iterations),
+  DKQ = nrow(intensive_d_dkq@iterations),
+  DKR = nrow(intensive_d_dkr@iterations),
+  DKX = nrow(intensive_d_dkx@iterations),
+  DIS = nrow(intensive_d_dis@iterations)
 )
 
 # out$Iterations <- iter_counts[rownames(out)]
