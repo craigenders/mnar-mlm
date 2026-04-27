@@ -494,7 +494,7 @@ extract_growth_params <- function(object, method) {
   
   colnames(res) <- c(
     paste0("Est_", method),
-    paste0("SD_", method)
+    paste0("SE_", method)
   )
   
   res
@@ -502,14 +502,14 @@ extract_growth_params <- function(object, method) {
 
 # main summary table ----
 table_summary <- cbind(
-  extract_growth_params(model1, "M1"),
-  extract_growth_params(model2, "M2"),
-  extract_growth_params(model3, "M3"),
-  extract_growth_params(model4, "M4"),
-  extract_growth_params(model5, "M5"),
-  extract_growth_params(model6, "M6"),
-  extract_growth_params(model7, "M7"),
-  extract_growth_params(model8, "M8")
+  extract_growth_params(model1, "Mod1"),
+  extract_growth_params(model2, "Mod2"),
+  extract_growth_params(model3, "Mod3"),
+  extract_growth_params(model4, "Mod4"),
+  extract_growth_params(model5, "Mod5"),
+  extract_growth_params(model6, "Mod6"),
+  extract_growth_params(model7, "Mod7"),
+  extract_growth_params(model8, "Mod8")
 )
 table_summary
 
@@ -528,14 +528,28 @@ table_diff <- do.call(rbind, lapply(seq_along(methods_short), function(i) {
   m <- methods_short[i]
   c(
     Mean_Diff     = unname(mean_row[paste0("Est_", m)]),
-    SD_Mean_Diff  = unname(mean_row[paste0("SD_",  m)]),
+    SE_Mean_Diff  = unname(mean_row[paste0("SE_",  m)]),
     Std_Mean_Diff = unname(std_row[paste0("Est_",  m)]),
-    SD_Std_Mean   = unname(std_row[paste0("SD_",   m)])
+    SE_Std_Mean   = unname(std_row[paste0("SE_",   m)])
   )
 }))
 rownames(table_diff) <- methods_long
 table_diff <- as.data.frame(table_diff)
 table_diff
+
+# changes in SE units ----
+
+est_cmar <- table_summary[, 1]
+se_cmar  <- table_summary[, 2]
+
+compare_methods <- c("Mod2", "Mod3", "Mod5", "Mod6", "Mod7", "Mod8")
+
+table_change <- sapply(compare_methods, function(m) {
+  round((table_summary[, paste0("Est_", m)] - est_cmar) / se_cmar, 2)
+})
+table_change <- as.data.frame(table_change)
+rownames(table_change) <- rownames(table_summary)
+table_change
 
 # diagnostics table ----
 

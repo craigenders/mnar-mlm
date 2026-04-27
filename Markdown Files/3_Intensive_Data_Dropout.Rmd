@@ -60,6 +60,21 @@ supporting documents, and the GitHub repository at
 [https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)
 includes executable R and Blimp Studio scripts for all examples.
 
+The model numbers used throughout this supplement correspond to the models displayed in Tables 2 through 5 in the paper. The ten sensitivity models analyzed in this supplement are:
+
+| Model | Description |
+|:------|:------------|
+| **Model 1**  | CMAR |
+| **Model 2**  | Shared Parameter Model With Random Effects Predicting Dropout |
+| **Model 3**  | Shared Parameter Model With Random Effects and Their Squares Predicting Dropout |
+| **Model 4**  | Shared Parameter Model With Random Effect Residuals Predicting Dropout |
+| **Model 5**  | Shared Parameter Model With Random Effects and Covariate Means Predicting Dropout |
+| **Model 6**  | Selection Model With Outcome and its Lag Predicting Dropout |
+| **Model 7**  | Selection Model With Outcome, its Square, and its Lag Predicting Dropout |
+| **Model 8**  | Selection Model With Residualized Outcome and its Lag Predicting Dropout |
+| **Model 9**  | Selection Model With Outcome, Covariate, and Their Lags Predicting Dropout |
+| **Model 10** | Combined Model with Random Effects, Residualized Outcome and its Lag Predicting Dropout |
+
 ------------------------------------------------------------------------
 
 ## rblimp Arguments
@@ -107,7 +122,7 @@ MODEL ESTIMATES sections follow the table.
 | `OUTCOME MODEL ESTIMATES`           | Parameter estimates, standard errors, credible intervals, and diagnostics; see detailed description below                      |
 | `GENERATED PARAMETERS`              | Displays auxiliary parameters that are a function of the estimated parameters (e.g., mean difference, standardized mean difference) |
 
-### BURN-IN RHAT Convergence Diagnostic
+### Potential Scale Reduction Convergence Diagnostic
 
 The potential scale reduction factor (PSRF) or Rhat convergence
 diagnostic appears near the top of the output. The PSRF assesses
@@ -132,15 +147,6 @@ standard errors" (posterior standard deviations), the 2.5% and 97.5%
 columns display 95% credible intervals. The ChiSq and PValue columns
 are frequentist significance tests (Wald chi-square values).
 
-The rightmost column labeled N_Eff is the effective sample size (ESS)
-diagnostic. The ESS provides a gauge of whether the post-warm-up
-parameter summaries have sufficient precision. Numerically, it reflects
-the effective number of MCMC iterations (the "sample size") that
-contribute to these summaries after accounting for autocorrelation in
-the sampling process. Values above 100 are generally considered
-adequate (Gelman et al., 2014, p. 287). Inadequate PSRF and ESS values
-indicate that more iterations are needed.
-
 The tables for alpha (random intercept), beta (random slope), and omega
 (random within-person log-variation) summarize the focal model's
 level-2 regression equations and random coefficient variation. The
@@ -153,6 +159,17 @@ quality. Values around .70 or higher suggest that the predictors almost
 perfectly classify dropouts from completers, a condition known as
 near-separation. Very large effect sizes almost always signal that a
 model lacks support from the data.
+
+### Effective Sample Size Diagnostic
+
+The rightmost column in the parameter summary tables labeled N_Eff is
+the effective sample size (ESS) diagnostic. The ESS provides a gauge of
+whether the post-warm-up parameter summaries have sufficient precision.
+Numerically, it reflects the effective number of MCMC iterations (the
+"sample size") that contribute to these summaries after accounting for
+autocorrelation in the sampling process. Values above 100 are generally
+considered adequate (Gelman et al., 2014, p. 287). Inadequate PSRF and
+ESS values indicate that more iterations are needed.
 
 ------------------------------------------------------------------------
 
@@ -235,7 +252,7 @@ extract_intensive_params <- function(object, method) {
 
   colnames(res) <- c(
     paste0("Est_", method),
-    paste0("SD_", method)
+    paste0("SE_", method)
   )
 
   res
@@ -490,6 +507,8 @@ plot_pmiss
 ```
 
 ## Probability Comparison
+
+The table below compares observed missingness probabilities to model-predicted probabilities from the linear, quadratic, and dummy-coded time models.
 
 ```{r miss-fit}
 pmiss_obs       <- aggregate(m ~ time + group,               data = time_dummy@average_imp,     mean)
@@ -1087,22 +1106,41 @@ output(model10)
 
 ------------------------------------------------------------------------
 
-# Summary Tables
+# Sensitivity Summary
+
+## Model Key
+
+The model numbers used throughout this supplement correspond to the models displayed in Tables 2 through 5 in the paper.
+
+| Model | Description |
+|:------|:------------|
+| **Model 1**  | CMAR |
+| **Model 2**  | Shared Parameter Model With Random Effects Predicting Dropout |
+| **Model 3**  | Shared Parameter Model With Random Effects and Their Squares Predicting Dropout |
+| **Model 4**  | Shared Parameter Model With Random Effect Residuals Predicting Dropout |
+| **Model 5**  | Shared Parameter Model With Random Effects and Covariate Means Predicting Dropout |
+| **Model 6**  | Selection Model With Outcome and its Lag Predicting Dropout |
+| **Model 7**  | Selection Model With Outcome, its Square, and its Lag Predicting Dropout |
+| **Model 8**  | Selection Model With Residualized Outcome and its Lag Predicting Dropout |
+| **Model 9**  | Selection Model With Outcome, Covariate, and Their Lags Predicting Dropout |
+| **Model 10** | Combined Model with Random Effects, Residualized Outcome and its Lag Predicting Dropout |
 
 ## Parameter Estimates
 
-```{r extract-params, cache=TRUE, dependson=c("model1","model2","model3","model4","model5","model6","model7","model8","model9","model10")}
+The table displays the estimate (posterior median) and Bayesian standard error (posterior standard deviation) for each model. Column headers beginning with `Est` contain the point estimates and those beginning with `SE` contain the Bayesian standard errors.
+
+```{r extract-params, cache=TRUE, dependson=c("helper-functions","model1","model2","model3","model4","model5","model6","model7","model8","model9","model10")}
 table_summary <- cbind(
-  extract_intensive_params(model1,  "M1"),
-  extract_intensive_params(model2,  "M2"),
-  extract_intensive_params(model3,  "M3"),
-  extract_intensive_params(model4,  "M4"),
-  extract_intensive_params(model5,  "M5"),
-  extract_intensive_params(model6,  "M6"),
-  extract_intensive_params(model7,  "M7"),
-  extract_intensive_params(model8,  "M8"),
-  extract_intensive_params(model9,  "M9"),
-  extract_intensive_params(model10, "M10")
+  extract_intensive_params(model1,  "Mod1"),
+  extract_intensive_params(model2,  "Mod2"),
+  extract_intensive_params(model3,  "Mod3"),
+  extract_intensive_params(model4,  "Mod4"),
+  extract_intensive_params(model5,  "Mod5"),
+  extract_intensive_params(model6,  "Mod6"),
+  extract_intensive_params(model7,  "Mod7"),
+  extract_intensive_params(model8,  "Mod8"),
+  extract_intensive_params(model9,  "Mod9"),
+  extract_intensive_params(model10, "Mod10")
 )
 ```
 
@@ -1110,22 +1148,43 @@ table_summary <- cbind(
 knitr::kable(table_summary, caption = "Parameter Estimates")
 ```
 
-## Effect Sizes
+## Changes in SE Units
+
+Each cell reports the difference between Model k and the CMAR baseline (Model 1), scaled by Model 1's Bayesian standard error. Values near zero indicate that the MNAR assumption has little practical impact on that parameter relative to sampling variability.
+
+```{r table-change, cache=TRUE, dependson="extract-params"}
+est_cmar <- table_summary[, "Est_Mod1"]
+se_cmar  <- table_summary[, "SE_Mod1"]
+
+compare_methods <- c("Mod2", "Mod3", "Mod4", "Mod5", "Mod6", "Mod7", "Mod8", "Mod9", "Mod10")
+
+table_change <- sapply(compare_methods, function(m) {
+  round((table_summary[, paste0("Est_", m)] - est_cmar) / se_cmar, 2)
+})
+table_change <- as.data.frame(table_change)
+rownames(table_change) <- rownames(table_summary)
+```
+
+```{r table-change-display, echo=FALSE, dependson="table-change"}
+knitr::kable(table_change, caption = "Changes vs. CMAR in Standard Error Units")
+```
+
+## Mean Difference
 
 ```{r extract-diff, cache=TRUE, dependson="extract-params"}
 mean_row <- table_summary["Mean Diff.", ]
 std_row  <- table_summary["Std. Diff.", ]
 
-methods_short <- paste0("M", 1:10)
+methods_short <- paste0("Mod", 1:10)
 methods_long  <- paste0("Model ", 1:10)
 
 table_diff <- do.call(rbind, lapply(seq_along(methods_short), function(i) {
   m <- methods_short[i]
   c(
     Mean_Diff     = unname(mean_row[paste0("Est_", m)]),
-    SD_Mean_Diff  = unname(mean_row[paste0("SD_",  m)]),
+    SE_Mean_Diff  = unname(mean_row[paste0("SE_",  m)]),
     Std_Mean_Diff = unname(std_row[paste0("Est_",  m)]),
-    SD_Std_Mean   = unname(std_row[paste0("SD_",   m)])
+    SE_Std_Mean   = unname(std_row[paste0("SE_",   m)])
   )
 }))
 rownames(table_diff) <- methods_long
@@ -1133,7 +1192,7 @@ table_diff <- as.data.frame(table_diff)
 ```
 
 ```{r table-diff-display, echo=FALSE, dependson="extract-diff"}
-knitr::kable(table_diff, caption = "Effect Sizes")
+knitr::kable(table_diff, caption = "Mean Difference")
 ```
 
 ## Convergence Diagnostics
