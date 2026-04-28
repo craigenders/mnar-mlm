@@ -62,25 +62,25 @@ write.csv(conv_intensive_im,file = '~/desktop/MNAR Results/conv_intensive_im_ni.
 
 set_blimp('/applications/blimp/blimp-nightly')
 
-source('1. Analysis Growth Dropout FIN.R')
+source('1. Analysis Growth Dropout FIN.R', echo = TRUE)
 
 write.csv(table_summary,file = '~/desktop/MNAR Results/tab_growth_do_fi.csv')
 write.csv(table_diff,file = '~/desktop/MNAR Results/es_growth_do_fi.csv')
 write.csv(table_diag,file = '~/desktop/MNAR Results/conv_growth_do_fi.csv')
 
-source('2. Analysis Growth Intermittent FIN.R')
+source('2. Analysis Growth Intermittent FIN.R', echo = TRUE)
 
 write.csv(table_summary,file = '~/desktop/MNAR Results/tab_growth_im_fi.csv')
 write.csv(table_diff,file = '~/desktop/MNAR Results/es_growth_im_fi.csv')
 write.csv(table_diag,file = '~/desktop/MNAR Results/conv_growth_im_fi.csv')
 
-source('3. Analysis Intensive Dropout FIN.R')
+source('3. Analysis Intensive Dropout FIN.R', echo = TRUE)
 
 write.csv(table_summary,file = '~/desktop/MNAR Results/tab_intensive_do_fi.csv')
 write.csv(table_diff,file = '~/desktop/MNAR Results/es_intensive_do_fi.csv')
 write.csv(table_diag,file = '~/desktop/MNAR Results/conv_intensive_do_fi.csv')
 
-source('4. Analysis Intensive Intermittent FIN.R')
+source('4. Analysis Intensive Intermittent FIN.R', echo = TRUE)
 
 write.csv(table_summary,file = '~/desktop/MNAR Results/tab_intensive_im_fi.csv')
 write.csv(table_diff,file = '~/desktop/MNAR Results/es_intensive_im_fi.csv')

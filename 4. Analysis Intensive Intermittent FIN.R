@@ -635,19 +635,21 @@ mean_row <- table_summary["Mean Diff.", ]
 std_row  <- table_summary["Std. Diff.", ]
 
 # method names
-methods_short <- paste0("M", 1:10)
+methods_short <- paste0("Mod", 1:10)
 methods_long  <- paste0("Model ", 1:10)
 
 # build table
 table_diff <- do.call(rbind, lapply(seq_along(methods_short), function(i) {
   m <- methods_short[i]
+  
   c(
-    Mean_Diff     = unname(mean_row[paste0("Est_", m)]),
-    SE_Mean_Diff  = unname(mean_row[paste0("SE_",  m)]),
-    Std_Mean_Diff = unname(std_row[paste0("Est_",  m)]),
-    SE_Std_Mean   = unname(std_row[paste0("SE_",   m)])
+    Mean_Diff     = as.numeric(unlist(mean_row[paste0("Est_", m)])),
+    SE_Mean_Diff  = as.numeric(unlist(mean_row[paste0("SE_",  m)])),
+    Std_Mean_Diff = as.numeric(unlist(std_row[paste0("Est_",  m)])),
+    SE_Std_Mean   = as.numeric(unlist(std_row[paste0("SE_",   m)]))
   )
 }))
+
 rownames(table_diff) <- methods_long
 table_diff <- as.data.frame(table_diff)
 table_diff
