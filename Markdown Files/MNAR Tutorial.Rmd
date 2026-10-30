@@ -43,9 +43,11 @@ options(scipen = 999)
 
 # Overview
 
-This tutorial accompanies "Missing Not at Random Models for Multilevel Analyses." The paper describes how to specify shared parameter and selection models for multilevel analyses of longitudinal change and intensive longitudinal data, and this document walks through every analysis in the paper with executable `rblimp` code, the equivalent Blimp Studio script, and annotated output. The two documents are meant to be read together: the paper explains the models, and this tutorial explains the syntax. Section headings here follow the paper, so a reader can move from a paper section to the matching code.
+This tutorial accompanies "Missing Not at Random Models for Multilevel Analyses." The paper describes how to specify shared parameter and selection models for multilevel analyses of longitudinal change and intensive longitudinal data, and this document walks through every analysis in the paper with executable `rblimp` code, the equivalent Blimp script, and annotated output. The two documents are meant to be read together: the paper explains the models, and this tutorial explains the syntax. Section headings here follow the paper, so a reader can move from a paper section to the matching code.
 
 The GitHub repository at [https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm) includes a PDF of the paper, the four example data sets, the executable R scripts, this tutorial, and a companion document on the equivalence between dummy-coded missingness models and item response theory (IRT) missingness models.
+
+**Software.** All analyses use Blimp (the computational engine) through the rblimp R package, so both must be installed before any code here will run. Blimp is a free download for macOS, Windows, and Linux from [https://www.appliedmissingdata.com/blimp](https://www.appliedmissingdata.com/blimp); rblimp is on CRAN (`install.packages("rblimp")`) and requires Blimp to be installed first. Two short documents in the repository cover the setup: the [Blimp Installation Guide](Blimp%20Installation%20Guide.html) walks through installing Blimp, Blimp Studio, and rblimp on each platform, and the [Blimp Scripting Quick Start](Blimp%20Scripting%20Quick%20Start.html) introduces the scripting language and the correspondence between Blimp commands and `rblimp()` arguments. Readers new to Blimp should skim both before the [Blimp and rblimp](#blimp-and-rblimp) section below, which explains the specific commands this tutorial uses.
 
 | Paper section | Tutorial section |
 |:--|:--|
@@ -128,7 +130,7 @@ Missingness was generated from a probit selection model in which time indicators
 
 # Blimp and rblimp
 
-Each analysis below is shown twice: as a Blimp Studio script and as the equivalent `rblimp()` function call in R. The two are interchangeable. A Blimp script is a plain-text file with a `.imp` extension in which major commands end with a colon and the specifications within each command end with a semicolon; `#` begins a comment. Each Blimp command becomes an argument of the same name to `rblimp()`. The `DATA` and `MISSING` commands have no counterpart because the data and missing value codes are already encoded in the R data frame. Text inputs such as variable lists and equations are quoted in R; numeric inputs are not.
+Each analysis below is shown twice: as a Blimp script and as the equivalent `rblimp()` function call in R. The two are interchangeable. A Blimp script is a plain-text file with a `.imp` extension in which major commands end with a colon and the specifications within each command end with a semicolon; `#` begins a comment. Each Blimp command becomes an argument of the same name to `rblimp()`. The `DATA` and `MISSING` commands have no counterpart because the data and missing value codes are already encoded in the R data frame. Text inputs such as variable lists and equations are quoted in R; numeric inputs are not.
 
 | Blimp command | rblimp argument | Description |
 |:--|:--|:--|
@@ -188,6 +190,18 @@ intensive_intermittent <- read.csv(paste0(github, 'intensive-intermittent.csv'),
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
 ```
+
+The second file defines `plot_means()`, which draws averages of any variable in an `rblimp` model's imputed data by occasion and, optionally, by group. It is used throughout the tutorial for the missingness-probability figures and for the model-implied growth curves.
+
+```r
+plot_means(outcome ~ x_var | group_var, model = fit, ylab = , title = , group_labels = ,
+           use_latent_growth = FALSE)
+```
+
+- `outcome` is any column of `fit@average_imp` (the imputed data averaged over iterations): an observed or imputed variable such as `m`, or a model-generated quantity such as `m.1.probability` (the predicted probability that `m` = 1).
+- `x_var` is the horizontal axis (here `time`); `| group_var` is optional and draws one line per group.
+- `use_latent_growth = TRUE` ignores `outcome` and instead draws strictly linear trajectories from each person's posterior random intercept and slope (`alpha.latent`, `beta.latent`), which is how the CMAR growth curves in Figure 1A are produced.
+- The result is a `ggplot` object, so axis limits, themes, and line styles can be added with `+` as in the chunks below, and `patchwork` operators (`|`, `/`) arrange several plots.
 
 ## Helper Functions
 
@@ -359,7 +373,7 @@ The growth model is fit to the dropout and intermittent data sets. The script is
 
 The first fit uses the growth data with dropout.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                               # raw data file
@@ -415,7 +429,7 @@ output(model1_gd)
 
 The same model applied to the growth data with intermittent missingness.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                          # raw data file
@@ -483,7 +497,7 @@ The intensive model adds a time-varying covariate and a random within-person var
 
 The intensive model applied to the data with dropout.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;             # raw data file
@@ -545,7 +559,7 @@ output(model1_id)
 
 The same model applied to the intensive data with intermittent missingness.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;        # raw data file
@@ -602,6 +616,55 @@ model1_ii <- rblimp(
 
 output(model1_ii)
 ```
+
+## Model-Implied Trajectories (Figure 1)
+
+Figure 1 in the paper shows the group-specific regression lines from the CMAR models: linear growth trajectories for the growth data (Panel A) and simple slopes of the outcome on the within-person covariate for the intensive data (Panel B). Both are reproduced here from the Model 1 fits.
+
+For the growth data, `plot_means()` with `use_latent_growth = TRUE` averages each person's posterior random intercept and slope within group and draws the implied lines.
+
+```{r figure1a}
+p_growth_d <- plot_means(y ~ time | group, model = model1_gd,
+    ylab = "Y", title = "Growth Data With Dropout",
+    group_labels = c("0" = "0", "1" = "1"), use_latent_growth = TRUE) + ylim(0, 7) +
+    theme(legend.position = "top", legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid"))
+
+p_growth_i <- plot_means(y ~ time | group, model = model1_gi,
+    ylab = "Y", title = "Growth Data With Intermittent Missingness",
+    group_labels = c("0" = "0", "1" = "1"), use_latent_growth = TRUE) + ylim(0, 7) +
+    theme(legend.position = "top", legend.justification = "center") +
+    scale_linetype_manual(values = c("dashed", "solid"))
+
+p_growth_d | p_growth_i
+```
+
+For the intensive data, the simple slopes come directly from the level-2 estimates: the group-specific intercept is $\gamma_{0\alpha} + \gamma_{1\alpha}(\mathit{GROUP})$ and the group-specific slope is $\gamma_{0\beta} + \gamma_{1\beta}(\mathit{GROUP})$, evaluated over the range of the within-person covariate $X^{w}$ (centered, so 0 is a person's own mean). The helper below extracts the four coefficients from a fitted model and draws the lines.
+
+```{r figure1b}
+plot_simple_slopes <- function(model, xrange = c(-2, 2), title = NULL, ylab = "Y") {
+  est <- model@estimates[, "Estimate"]
+  g0a <- est["alpha ~ Intercept"]; g1a <- est["alpha ~ group"]
+  g0b <- est["beta ~ Intercept"];  g1b <- est["beta ~ group"]
+  xw  <- seq(xrange[1], xrange[2], length.out = 50)
+  dat <- rbind(data.frame(xw = xw, group = "0", y = g0a + g0b * xw),
+               data.frame(xw = xw, group = "1", y = (g0a + g1a) + (g0b + g1b) * xw))
+  ggplot(dat, aes(x = xw, y = y, linetype = group)) +
+    geom_line(linewidth = 1) +
+    scale_linetype_manual(values = c("0" = "dashed", "1" = "solid")) +
+    labs(title = title, x = "X (within-person centered)", y = ylab, linetype = "group") +
+    theme_classic(base_size = 14) +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = "top", legend.justification = "center")
+}
+
+p_int_d <- plot_simple_slopes(model1_id, title = "Intensive Data With Dropout")
+p_int_i <- plot_simple_slopes(model1_ii, title = "Intensive Data With Intermittent Missingness")
+
+p_int_d | p_int_i
+```
+
+The same two functions can be applied to any of the MNAR fits below (for example, `plot_means(y ~ time | group, model = model2_gd, use_latent_growth = TRUE)`) to see how a missingness assumption changes the model-implied trajectories.
 
 ## Reading the Output
 
@@ -777,7 +840,7 @@ Fixing the threshold at 0 and the within-person variance at 1 identifies the mod
 
 The empty model for the growth data with intermittent missingness.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;     # raw data file
@@ -815,7 +878,7 @@ icc_latent(icc_gi)
 
 The empty model for the intensive data with intermittent missingness.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;  # raw data file
@@ -869,7 +932,7 @@ $$M^*_{ti} = \lambda_0 + \lambda_1(\mathit{GROUP}_i) + \sum_{t=1}^{T-1}\left[\la
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                      # raw data file
@@ -923,7 +986,7 @@ output(time_linear_gi)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                                          # raw data file
@@ -977,7 +1040,7 @@ output(time_quadratic_gi)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -1099,7 +1162,7 @@ The intensive data use the same three specifications. The only change is that th
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                   # raw data file
@@ -1159,7 +1222,7 @@ output(time_linear_ii)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                                       # raw data file
@@ -1219,7 +1282,7 @@ output(time_quadratic_ii)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                         # raw data file
@@ -1363,7 +1426,7 @@ $$M^*_{ti} = \lambda_0 + \sum_{t=1}^{T-1}\left[\lambda_{t0}(O_{ti}) + \lambda_{t
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                # raw data file
@@ -1417,7 +1480,7 @@ output(time_linear_gd)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                              # raw data file
@@ -1471,7 +1534,7 @@ output(time_quadratic_gd)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                # raw data file
@@ -1602,7 +1665,7 @@ $$M^*_{ti} = \lambda_0 + \sum_{t=1}^{T-1}\left[\lambda_{t0}(O_{ti})(D_{ti}) + \l
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                                 # raw data file
@@ -1666,7 +1729,7 @@ output(time_linear_id)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                                                                     # raw data file
@@ -1730,7 +1793,7 @@ output(time_quadratic_id)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -1870,7 +1933,7 @@ The missingness block adds the switched random effects to the dummy-coded dropou
 - `alpha*d beta*d` are the random intercept and slope, activated after baseline.
 - The `level2:` labels `@g0a`, `@g1a`, `@g0b`, `@g1b` are used by `PARAMETERS` and, in Model 4, by the residual definition variables.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                # raw data file
@@ -1938,7 +2001,7 @@ A linear specification lets only one tail of the random effect distribution pred
 
 - `alpha*d^2` and `beta*d^2` are the squared random effects; because `d` is 0 or 1, `d^2 = d`, and the terms are the squares of `alpha` and `beta` activated after baseline.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                            # raw data file
@@ -2009,7 +2072,7 @@ $$\zeta_{\alpha i} = \alpha_i - \left[\gamma_{0\alpha} + \gamma_{1\alpha}(\mathi
 - `alpha_res = alpha - (g0a + g1a*group);` and `beta_res = ...` are definition variables that subtract the level-2 predicted values; the labels `g0a`, `g1a`, `g0b`, `g1b` refer to the coefficients named in the `level2:` block.
 - This model needed 100,000 iterations to reach adequate diagnostics.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                 # raw data file
@@ -2087,7 +2150,7 @@ The missingness block adds `alpha` and `beta` to the dummy-coded intermittent mo
 
 - `m ~ intercept group alpha beta | intercept;` -- all parameters are free, including the random intercept after the pipe.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -2153,7 +2216,7 @@ Squared random effects allow both tails of the distribution to predict missingne
 
 - `alpha^2` and `beta^2` are the squared latent variables.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                                # raw data file
@@ -2219,7 +2282,7 @@ The residualized version uses the level-2 residuals in place of the raw random e
 
 - The residual definition variables are the same as in the dropout example; no switch is needed.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -2299,7 +2362,7 @@ The random intercept and the log-variance random effect, activated after occasio
 - `alpha*d omega*d` are the random intercept and log-variance, activated by `d`.
 - Both the random-effect terms and the dummy codes in the loop are multiplied by `d`.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -2373,7 +2436,7 @@ Squared terms for both random effects.
 
 - This model reached the 200,000-iteration cap and is flagged as inadmissible in Table 4.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                           # raw data file
@@ -2447,7 +2510,7 @@ The random intercept residual replaces the raw random intercept. Because `omega`
 
 - `alpha_res = alpha - (g0a + g1a*group);` uses the labeled level-2 coefficients.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -2526,7 +2589,7 @@ $$M^*_{ti} = \lambda_0 + \sum_{t=1}^{T-1}\left[\lambda_{t0}(O_{ti})(D_{ti}) + \l
 - `x.mean` is the latent person mean of `x`, the same quantity used by `CENTER: groupmean = x`.
 - This model reached the 200,000-iteration cap and is flagged as inadmissible in Table 4.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -2600,7 +2663,7 @@ The intermittent versions parallel the growth models: no switch, an estimable in
 
 Random intercept and log-variance predicting missingness.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                         # raw data file
@@ -2668,7 +2731,7 @@ output(model2_ii)
 
 Squared random effects.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                               # raw data file
@@ -2736,7 +2799,7 @@ output(model3_ii)
 
 Residualized random intercept with the log-variance random effect.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                         # raw data file
@@ -2806,7 +2869,7 @@ output(model4_ii)
 
 Adds the latent person mean of *X*.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                         # raw data file
@@ -2893,7 +2956,7 @@ The outcome and its lag, switched on after baseline.
 - `y*d y.lag*d` -- `y.lag` is the previous occasion's outcome, created by Blimp from `timeid`.
 - At baseline `y.lag` does not exist; `d` = 0 there, so the term contributes nothing.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                # raw data file
@@ -2962,7 +3025,7 @@ A linear term lets only one tail of the outcome distribution predict higher attr
 - `y^2*d` is the squared outcome, activated after baseline.
 - This model is flagged as inadmissible in Table 2 because of its large pseudo-$R^2$.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                # raw data file
@@ -3033,7 +3096,7 @@ $$Y^{w}_{ti} = Y_{ti} - \left(\alpha_i + \beta_i(\mathit{TIME}_{ti})\right) \qqu
 - `yw = y - (alpha + beta*time);` and `lagyw = y.lag - (alpha + beta*(time - 1));` are definition variables for the detrended outcome and its lag.
 - This model required 200,000 iterations and is flagged as inadmissible in Table 2.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                # raw data file
@@ -3109,7 +3172,7 @@ This model differs subtly from the SEM in Figure 2D of the paper, which has no c
 
 The outcome and its lag with no switch.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -3175,7 +3238,7 @@ The specification below replaces the imputed baseline lag with zero, which is an
 
 - `y_lag = ifelse(time == 0, 0, y.lag);` is a definition variable that returns 0 at baseline and the lagged outcome elsewhere, so the baseline lag never enters the model.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -3244,7 +3307,7 @@ cbind(extract_growth_params(model5_gi, "Default"),
 
 Adds the squared outcome.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -3310,7 +3373,7 @@ Detrended outcome and lag.
 
 - Flagged as inadmissible in Table 3 (200,000 iterations, large pseudo-$R^2$).
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -3382,7 +3445,7 @@ $$M^*_{ti} = \lambda_0 + \sum_{t=1}^{T-1}\left[\lambda_{t0}(O_{ti})(D_{ti}) + \l
 
 Outcome and lag, switched on at occasion 7.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -3456,7 +3519,7 @@ Adds the squared outcome.
 
 - Flagged as inadmissible in Table 4 (200,000 iterations, pseudo-$R^2$ = .96).
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -3532,7 +3595,7 @@ $$M^*_{ti} = \lambda_0 + \sum_{t=1}^{T-1}\left[\lambda_{t0}(O_{ti})(D_{ti}) + \l
 
 - `(y - alpha)*d` and `(y.lag - alpha)*d` center the outcome and its lag at the random intercept inline, without definition variables.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                       # raw data file
@@ -3606,7 +3669,7 @@ When *X* and *Y* are jointly missing, the covariate and its lag can be added to 
 
 - `x*d x.lag*d` add the covariate and its lag; Blimp imputes missing `x` from its background model.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                  # raw data file
@@ -3682,7 +3745,7 @@ The intermittent versions drop the switch and estimate the intercept, group effe
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                        # raw data file
@@ -3750,7 +3813,7 @@ output(model6_ii)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                        # raw data file
@@ -3818,7 +3881,7 @@ output(model7_ii)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                               # raw data file
@@ -3886,7 +3949,7 @@ output(model8_ii)
 
 
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                        # raw data file
@@ -3971,7 +4034,7 @@ Detrended outcome and lag plus the random intercept and slope, all switched on a
 - `yw*d lagyw*d alpha*d beta*d` -- the within-person and between-person components enter with separate coefficients.
 - Flagged as inadmissible in Table 2.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-dropout.csv;                                      # raw data file
@@ -4043,7 +4106,7 @@ The intermittent version with no switch.
 
 - Flagged as inadmissible in Table 3.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: growth-intermittent.csv;                           # raw data file
@@ -4115,7 +4178,7 @@ Centered outcome and lag plus the random intercept and log-variance, switched on
 
 - Flagged as inadmissible in Table 4.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-dropout.csv;                                                       # raw data file
@@ -4185,7 +4248,7 @@ output(model10_id)
 
 The intermittent version.
 
-**Blimp Studio script**
+**Blimp script**
 
 ```
 DATA: intensive-intermittent.csv;                                           # raw data file

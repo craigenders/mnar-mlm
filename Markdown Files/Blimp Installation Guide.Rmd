@@ -1,0 +1,155 @@
+---
+title: "Blimp Installation Guide"
+author: "Craig Enders and Brian Keller"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 2
+    theme: cosmo
+    highlight: haddock
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{css, echo=FALSE}
+body { font-size: 18px; }
+pre { font-size: 15.6px; white-space: pre; overflow-x: visible; }
+.main-container { max-width: 1500px !important; }
+table { width: auto !important; margin-left: 0; }
+th, td { padding-right: 2.5em !important; }
+```
+
+# Overview
+
+Blimp is a standalone software package for Bayesian multilevel structural equation modeling and imputation. It runs as a command-line application on all major operating systems and can also be used through Blimp Studio, a graphical interface for interactive use, or through rblimp, an R interface to the Blimp engine. The analyses in the accompanying tutorial use rblimp, so both Blimp and the R package must be installed.
+
+------------------------------------------------------------------------
+
+# System Requirements
+
+| Platform | Supported versions | Notes |
+|:--|:--|:--|
+| macOS | macOS 11.6 (Big Sur) or later | Intel and Apple Silicon supported |
+| Windows | Windows 10 or later | Requires administrator privileges to install |
+| Linux | Ubuntu 20.04+ or RHEL 8+ | Static or dynamic binaries available; no Blimp Studio |
+
+For Linux users on an older or managed system (for example, a computing cluster), prefer the static build to avoid library dependency issues.
+
+------------------------------------------------------------------------
+
+# Downloading Blimp and Blimp Studio
+
+Blimp binaries and installers are hosted at [https://www.appliedmissingdata.com/blimp](https://www.appliedmissingdata.com/blimp).
+
+Blimp Studio is an optional companion graphical interface for macOS and Windows that provides model editing with syntax highlighting, automatic update notifications, and project organization tools. It is not required for rblimp.
+
+Available downloads:
+
+- macOS installer (`.dmg`)
+- Windows installer (`.exe`)
+- Linux binaries: `blimp_binary.tar.gz` (Ubuntu, static), `blimp_binary_dynlibs.tar.gz` (Ubuntu, dynamic), `blimp_binary-RHEL8.tar.gz` (RHEL 8, static), `blimp_binary_dynlibs-RHEL8.tar.gz` (RHEL 8, dynamic)
+
+Offline installers that do not require an internet connection are also available for macOS and Windows.
+
+Note that the installer version number differs from the version number of Blimp's computational engine.
+
+------------------------------------------------------------------------
+
+# Installing Blimp
+
+## macOS
+
+1. Download the `.dmg` installer for macOS 11.6 or later from the Blimp website.
+2. Open the `.dmg`, double-click the installer, and follow the prompts.
+3. Blimp and Blimp Studio are installed in `/Applications/Blimp/` by default.
+
+If macOS prevents Blimp from launching, open System Settings → Privacy & Security and click **Allow Anyway**.
+
+## Windows
+
+1. Download the `.exe` installer for Windows 10 or later.
+2. Right-click the installer, choose **Run as Administrator**, and follow the prompts.
+3. Blimp and Blimp Studio are installed in `C:\Program Files\Blimp` by default.
+
+Some antivirus tools block the installer or the executable. Run the installer as Administrator, or use the offline installer if network restrictions exist.
+
+## Linux (Ubuntu or RHEL)
+
+1. Download the archive for your distribution (Blimp Studio is not available for Linux).
+2. Extract the archive:
+
+```
+tar -xzf blimp_binary.tar.gz
+```
+
+3. Move the executable to a directory in your `$PATH`.
+4. Run Blimp from the terminal:
+
+```
+blimp mymodel.imp
+```
+
+| Build | Description | Recommended for |
+|:--|:--|:--|
+| Static | Includes all dependencies; larger download | Clusters, older distributions, restricted systems |
+| Dynamic | Relies on system libraries; smaller download | Modern desktop systems with up-to-date runtimes |
+
+If you encounter runtime errors such as missing `libstdc++` or `glibc`, switch to the static build.
+
+## Clusters and headless systems
+
+Blimp runs without a graphical interface, so it is suitable for high-performance computing clusters, batch job submission, and command-line workflows. Data, seeds, and output files can be specified directly:
+
+```
+blimp myscript.imp --data=data.csv --output=results.txt
+```
+
+See the *Running From Terminal* section of the Blimp User Guide for the full set of arguments.
+
+------------------------------------------------------------------------
+
+# Installing rblimp
+
+The rblimp package is an R interface to the Blimp engine and is available on CRAN. Blimp itself must be installed first, because rblimp calls the Blimp executable.
+
+```r
+install.packages("rblimp")
+```
+
+To install the latest development version from GitHub:
+
+```r
+install.packages("remotes")
+remotes::install_github("blimp-stats/rblimp")
+```
+
+## Pointing rblimp at a specific Blimp build
+
+rblimp locates the default Blimp installation automatically. To use a different build (for example, a nightly release), set the path at the start of an R session:
+
+```r
+library(rblimp)
+set_blimp('/applications/blimp/blimp-nightly')   # macOS example
+```
+
+The setting does not persist between sessions.
+
+## Updating
+
+- Blimp checks for new releases when launched; follow the prompt to update.
+- Update rblimp from R with `update.packages("rblimp")` and check the installed version with `packageVersion("rblimp")`.
+
+Bugs and feature requests for rblimp can be reported on the [rblimp GitHub issues page](https://github.com/blimp-stats/rblimp/issues).
+
+------------------------------------------------------------------------
+
+# Support and Resources
+
+- Official site and User Guide: [https://www.appliedmissingdata.com/blimp](https://www.appliedmissingdata.com/blimp)
+- Scripting introduction: *Blimp Scripting Quick Start* (in this repository)
+- Support contact information is available on the website

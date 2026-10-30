@@ -1,0 +1,142 @@
+---
+title: "Blimp Scripting Quick Start"
+author: "Craig Enders and Brian Keller"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 2
+    theme: cosmo
+    highlight: haddock
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{css, echo=FALSE}
+body { font-size: 18px; }
+pre { font-size: 15.6px; white-space: pre; overflow-x: visible; }
+.main-container { max-width: 1500px !important; }
+table { width: auto !important; margin-left: 0; }
+th, td { padding-right: 2.5em !important; }
+```
+
+# Overview
+
+Blimp and rblimp are free software tools available at [www.appliedmissingdata.com/blimp](https://www.appliedmissingdata.com/blimp), where a detailed User Guide with dozens of analysis examples is also available. The native graphical interface, Blimp Studio, runs on macOS and Windows, and command-line versions are available for Linux. The rblimp R package lets researchers run Blimp from R, with access to R's scripting and visualization capabilities, including plotting functions not available in the graphical interface. Because rblimp uses the Blimp computational engine, the native application must be installed before the R package; see the *Blimp Installation Guide* in this repository.
+
+Model specification uses a simple scripting language that requires no prior knowledge of factored regression or Bayesian estimation. A Blimp script consists of several major commands (ending with a colon), each with its own subcommands or keywords (ending with a semicolon). Most commands fall into three categories: those that describe variables and their attributes (`DATA`, `VARIABLES`, `MISSING`, `ORDINAL`, `NOMINAL`, `COUNT`, `LATENT`), those that define the analysis model (`CENTER`, `MODEL`, `SIMPLE`, `PARAMETERS`), and those that control the MCMC algorithm (`BURN`, `ITER`, `SEED`).
+
+------------------------------------------------------------------------
+
+# An Example Script
+
+To illustrate, consider an analysis in which a three-category nominal predictor moderates the influence of a latent factor. Following standard procedures from linear regression (Aiken & West, 1991; Cohen et al., 2002), the structural model includes products of the dummy codes and the latent variable.
+
+$$
+Y_i = \beta_{0Y} + \beta_{1Y}(\eta_i) + \beta_{2Y}(M_{1,i}) + \beta_{3Y}(M_{2,i}) + \beta_{4Y}(\eta_i)(M_{1,i}) + \beta_{5Y}(\eta_i)(M_{2,i}) + \varepsilon_{Y,i}
+$$
+
+The Blimp script for the analysis is shown below.
+
+```
+DATA: example.dat;                     # raw text file
+VARIABLES: y x1 x2 x3 x4 m;            # variable names
+MISSING: 999;                          # missing value code
+ORDINAL: x1:x4;                        # define ordinal variables
+NOMINAL: m;                            # define multicategorical variables
+LATENT: eta;                           # define latent variable
+MODEL:                                 # regression models
+  eta ~~ eta@1;                        # factor variance
+  eta ~ m;                             # latent on multicategorical predictor
+  eta -> x1@lo1 x2:x4;                 # measurement model
+  x3 ~~ x4;                            # correlated residual
+  y ~ eta m eta*m;                     # structural model with latent interaction
+SIMPLE: eta | m;                       # simple intercepts and slopes
+BURN: 10000;                           # warm-up iterations
+ITER: 10000;                           # analysis iterations
+SEED: 90291;                           # random number seed
+```
+
+------------------------------------------------------------------------
+
+# Major Commands
+
+A brief description of the major Blimp commands follows; not all of them appear in the script above. The User Guide describes every command in detail, including many not shown here.
+
+**DATA** specifies the input data set, which must be a `.csv` file or a whitespace-delimited (including tab-delimited) text file such as `.dat` or `.txt`. Blimp accepts only numeric data values (a nominal variable cannot use alphanumeric labels as scores), although an alphanumeric missing value code such as `NA` is allowed. Variable names may appear as column headers in the file, in which case the `VARIABLES` command must be omitted. No file path is needed if the script (the `.imp` file) is in the same directory as the data.
+
+**VARIABLES** supplies the variable names, in column order, for the data set named on the `DATA` command. Omit this command when the data file has a header row. The list may include variables that are not used in the analysis.
+
+**MISSING** specifies the missing value code, which can be numeric (e.g., `999`) or alphanumeric (e.g., `NA`).
+
+**ORDINAL** identifies binary or ordinal variables that appear in a `MODEL` statement. Blimp adopts a probit link by default.
+
+**NOMINAL** identifies nominal variables that appear in a `MODEL` statement. A nominal variable must be a single variable with numeric codes. Blimp recodes it into dummy codes during estimation, with the lowest code as the reference category, and adopts a probit or logit link depending on whether the variable is an exogenous predictor or a dependent variable.
+
+**COUNT** identifies count variables that appear in a `MODEL` statement. Blimp adopts a negative binomial link by default.
+
+**LATENT** defines latent variables (e.g., factors in a measurement model) that are referenced in the `MODEL` section. Latent variables can be specified at any level of a multilevel model by referencing the cluster identifier from the `CLUSTERID` command (e.g., `LATENT: l2id = alpha beta;`).
+
+**CLUSTERID** specifies the cluster identifier variable(s) for a multilevel analysis or multilevel imputation. Two-level analyses require a single level-2 identifier; three-level analyses require level-2 and level-3 identifiers. The order does not matter, because Blimp determines the levels automatically.
+
+**TIMEID** specifies an integer variable that indexes repeated measurement occasions within clusters. It is required for lagged variables and for the `DROPOUT` command.
+
+**DROPOUT** creates a binary missing data indicator from an incomplete outcome, with the `(missing)` keyword for intermittent missingness and the `(monotone)` keyword for attrition.
+
+**CENTER** centers predictor variables in regression equations. Predictors in a multilevel regression can be centered at their grand means or at latent group means.
+
+**MODEL** consists of one or more regression equations. Blimp's modeling framework accommodates analyses ranging from multiple regression to multilevel structural equation models with interactions involving latent variables.
+
+**PARAMETERS** defines derived quantities that are functions of model parameters (e.g., contrasts, effect sizes); they are computed at every MCMC iteration and summarized like any other parameter.
+
+**SIMPLE** requests conditional effects (simple intercepts and slopes) from a regression model with an interaction. In rblimp, `simple_plot()` graphs the simple slopes and `jn_plot()` produces Johnson–Neyman regions of significance.
+
+**BURN** specifies the number of warm-up (burn-in) iterations. Each MCMC chain completes the specified number of iterations before estimates are saved for the parameter summaries.
+
+**ITER** specifies the total number of post-warm-up iterations for the analysis summary tables.
+
+**SEED** specifies the integer random number seed for MCMC estimation.
+
+------------------------------------------------------------------------
+
+# The Same Analysis in rblimp
+
+Each Blimp command corresponds to an argument of the same name in the `rblimp()` function. The `DATA`, `VARIABLES`, and `MISSING` commands have no counterpart because the variable names and missing value codes are already encoded in the R data frame.
+
+```r
+mymodel <- rblimp(                     # rblimp function call
+  data = example,                      # R data frame
+  ordinal = 'x1:x4',                   # define ordinal variables
+  nominal = 'm',                       # define multicategorical variables
+  latent = 'eta',                      # define latent variable
+  model = '                            # regression models
+    eta ~~ eta@1;                      # factor variance
+    eta ~ m;                           # latent on predictor
+    eta -> x1@lo1 x2:x4;               # measurement model
+    x3 ~~ x4;                          # correlated residual
+    y ~ eta m eta*m;',                 # model with latent interaction
+  simple = 'eta | m',                  # simple intercepts and slopes
+  burn = 10000,                        # warm-up iterations
+  iter = 10000,                        # analysis iterations
+  seed = 90291)                        # random number seed
+
+# print output
+output(mymodel)
+
+# plot simple slopes
+simple_plot(y ~ eta | m.1 + m.2, mymodel)
+```
+
+rblimp has several graphing functions that are not available in Blimp Studio. The `simple_plot()` function in the last line is one example; it graphs the simple slopes of the latent variable for each categorical group.
+
+------------------------------------------------------------------------
+
+# References
+
+Aiken, L. S., & West, S. G. (1991). *Multiple regression: Testing and interpreting interactions*. Sage.
+
+Cohen, J., Cohen, P., West, S. G., & Aiken, L. S. (2002). *Applied multiple regression/correlation analysis for the behavioral sciences* (3rd ed.). Erlbaum.
