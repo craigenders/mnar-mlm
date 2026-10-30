@@ -2,6 +2,7 @@
 title: "Blimp Scripting Quick Start"
 author: "Craig Enders and Brian Keller"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
+knit: (function(input, ...) rmarkdown::render(input, output_dir = "../docs", envir = globalenv()))
 output:
   html_document:
     toc: true

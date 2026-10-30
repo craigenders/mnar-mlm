@@ -2,6 +2,7 @@
 title: "Dummy-Coded Missingness Models and Their IRT Equivalents"
 author: "Craig Enders"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+knit: (function(input, ...) rmarkdown::render(input, output_dir = "../docs", envir = globalenv()))
 output:
   html_document:
     toc: true
