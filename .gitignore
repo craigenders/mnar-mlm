@@ -25,3 +25,6 @@
 
 # local scratch
 test/
+
+# superseded development files
+old/

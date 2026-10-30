@@ -1,16 +1,15 @@
 ---
-title: "Missing Not at Random Models for Multilevel Analyses"
-subtitle: "A Blimp and rblimp Tutorial"
+title: "Supplemental Materials: Analysis Examples"
+subtitle: "Missing Not at Random Models for Multilevel Analyses of Longitudinal and Intensive Longitudinal Data"
 author: "Craig K. Enders, Brian T. Keller, and J.P. Laurenceau"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
-knit: (function(input, ...) rmarkdown::render(input, output_dir = "../docs", envir = globalenv()))
 output:
   html_document:
     toc: true
     toc_float:
       collapsed: false
       smooth_scroll: false
-    toc_depth: 3
+    toc_depth: 4
     theme: cosmo
     highlight: haddock
     code_folding: show
@@ -45,7 +44,7 @@ options(scipen = 999)
 
 # Overview
 
-This tutorial accompanies "Missing Not at Random Models for Multilevel Analyses of Longitudinal and Intensive Longitudinal Data." The paper describes how to specify shared parameter and selection models for multilevel analyses of longitudinal change and intensive longitudinal data, and this document walks through every analysis in the paper with executable code and annotated output. The two documents are meant to be read together: the paper explains the models, and this tutorial explains the syntax. Section headings here follow the paper, so a reader can move from a paper section to the matching code, and the model numbers correspond to Tables 2 through 5 in the paper.
+This tutorial accompanies "Missing Not at Random Models for Multilevel Analyses of Longitudinal and Intensive Longitudinal Data." The paper describes how to specify shared parameter and selection models for multilevel analyses of longitudinal change and intensive longitudinal data, and this document walks through every analysis in the paper with executable code and annotated output. The two documents are meant to be read together: the paper explains the models, and this tutorial explains the syntax. The major section headings here match the paper's, so a reader can move from a paper section to the matching code, and the model numbers correspond to Tables 2 through 5 in the paper. Paper sections with no analyses (the Introduction, Latent Curve MNAR Models, and the Discussion) are omitted, and Figure 2 (path diagrams) is not reproduced; Figures 1, 3, and 4 are reproduced in the sections where the paper introduces them.
 
 Every analysis is presented twice, as a Blimp script and as the equivalent `rblimp()` function call in R. The two specifications are identical: each Blimp command maps onto an `rblimp` argument of the same name, and both run the same Blimp computational engine and produce the same output. The one difference is graphics. The missingness-probability figures and model-implied trajectories in this tutorial are drawn with R plotting functions that operate on `rblimp` model objects, so those sections are R-only; everything else can be run from either interface.
 
@@ -55,44 +54,9 @@ Every analysis is presented twice, as a Blimp script and as the equivalent `rbli
 
 ------------------------------------------------------------------------
 
-# Illustrative Data
+# Getting Started
 
-The paper uses simulated data because no single real data set includes the full range of features that influence the specification of MNAR models. Two designs are crossed with two missing data patterns, giving four data sets.
-
-| Data set | File | *N* | *T* | Design | Missingness |
-|:--|:--|--:|--:|:--|:--|
-| Growth, dropout | `growth-dropout.csv` | 500 | 5 | Linear growth | Monotone attrition after baseline |
-| Growth, intermittent | `growth-intermittent.csv` | 500 | 5 | Linear growth | Intermittent at every occasion |
-| Intensive, dropout | `intensive-dropout.csv` | 125 | 20 | Stationary process with a time-varying covariate and heterogeneous variance | Monotone attrition after occasion 7 |
-| Intensive, intermittent | `intensive-intermittent.csv` | 125 | 20 | Same | Intermittent at every occasion |
-
-Each file has 2,500 rows in stacked (long) format, one row per person per occasion, with missing values coded `NA`.
-
-| Variable | Definition | Data sets |
-|:--|:--|:--|
-| `l2id` | Person identifier (level-2 cluster) | All |
-| `time` | Occasion index, coded 0, 1, ..., *T* -- 1 | All |
-| `group` | Binary grouping variable (0/1), e.g., an intervention indicator | All |
-| `y` | Outcome with missing values | All |
-| `x` | Time-varying covariate with missing values | Intensive |
-
-The growth model is a two-level linear growth curve with random intercepts and slopes, with `group` predicting both.
-
-$$Y_{ti} = \alpha_i + \beta_i(\mathit{TIME}_{ti}) + \varepsilon_{ti}$$
-
-The intensive repeated measures model regresses the outcome on a time-varying covariate centered at its latent person mean (so the slope reflects only within-person variation), with a random intercept, a random slope, and a random within-person log-variance $\omega_i$ (a location-scale model).
-
-$$Y_{ti} = \alpha_i + \beta_i\left(X_{ti} - \mu_{Xi}\right) + \varepsilon_{ti} = \alpha_i + \beta_i\left(X^{w}_{ti}\right) + \varepsilon_{ti}$$
-
-In both designs, the level-2 model includes a binary grouping variable that predicts the random intercepts and slopes.
-
-$$\alpha_i = \gamma_{0\alpha} + \gamma_{1\alpha}(\mathit{GROUP}_i) + \zeta_{\alpha i} \qquad \beta_i = \gamma_{0\beta} + \gamma_{1\beta}(\mathit{GROUP}_i) + \zeta_{\beta i} \qquad \omega_i = \gamma_{0\omega} + \zeta_{\omega i}$$
-
-Missingness was generated from a probit selection model in which time indicators, the grouping variable, random effects, and observed and unobserved outcome scores predicted nonresponse. The data-generation scripts are in the repository.
-
-------------------------------------------------------------------------
-
-# Blimp and rblimp
+## Blimp and rblimp
 
 Each analysis below is shown twice: as a Blimp script and as the equivalent `rblimp()` function call in R. The two are interchangeable. A Blimp script is a plain-text file with a `.imp` extension in which major commands end with a colon and the specifications within each command end with a semicolon; `#` begins a comment. Each Blimp command becomes an argument of the same name to `rblimp()`. The `DATA` and `MISSING` commands have no counterpart because the data and missing value codes are already encoded in the R data frame. Text inputs such as variable lists and equations are quoted in R; numeric inputs are not.
 
@@ -127,8 +91,6 @@ Several features of Blimp's modeling language appear repeatedly and are explaine
 
 ------------------------------------------------------------------------
 
-# Setup
-
 ## Load Packages
 
 ```{r packages}
@@ -156,7 +118,6 @@ intensive_intermittent <- read.csv(paste0(github, 'data/intensive-intermittent.c
 ## Plotting Functions
 
 ```{r source-functions}
-source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
 source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/rblimp/mnar-plotting.R')
 ```
 
@@ -320,11 +281,50 @@ icc_latent <- function(object) {
 
 ------------------------------------------------------------------------
 
-# CMAR Models
+# Illustrative Models
 
-The Appendix of the paper gives Blimp scripts for the two focal models under the conditionally missing at random (CMAR) assumption. These are the baselines against which every MNAR model is compared. The scripts below differ from the Appendix in two ways. First, they add a `PARAMETERS` command that computes the effect sizes reported in the paper's tables; the [Sensitivity Analysis Results](#sensitivity-analysis-results) section defines them. Second, they include the `TIMEID` and `DROPOUT` commands even though no missingness model is specified. By default Blimp analyzes every row of the data file, imputing the outcome at every missing occasion, whereas the `DROPOUT` command with the `(monotone)` keyword removes a person's rows after the dropout occasion. Including the command in the CMAR model ensures that the baseline and the MNAR models analyze the same rows, so that their estimates, standard errors, and effect sizes are directly comparable. With the `(missing)` keyword no rows are removed, but the command is retained in the intermittent examples so that all four baselines are specified in parallel.
+## Illustrative Data
 
-## Growth Model
+The paper uses simulated data because no single real data set includes the full range of features that influence the specification of MNAR models. Two designs are crossed with two missing data patterns, giving four data sets.
+
+| Data set | File | *N* | *T* | Design | Missingness |
+|:--|:--|--:|--:|:--|:--|
+| Growth, dropout | `growth-dropout.csv` | 500 | 5 | Linear growth | Monotone attrition after baseline |
+| Growth, intermittent | `growth-intermittent.csv` | 500 | 5 | Linear growth | Intermittent at every occasion |
+| Intensive, dropout | `intensive-dropout.csv` | 125 | 20 | Stationary process with a time-varying covariate and heterogeneous variance | Monotone attrition after occasion 7 |
+| Intensive, intermittent | `intensive-intermittent.csv` | 125 | 20 | Same | Intermittent at every occasion |
+
+Each file has 2,500 rows in stacked (long) format, one row per person per occasion, with missing values coded `NA`.
+
+| Variable | Definition | Data sets |
+|:--|:--|:--|
+| `l2id` | Person identifier (level-2 cluster) | All |
+| `time` | Occasion index, coded 0, 1, ..., *T* -- 1 | All |
+| `group` | Binary grouping variable (0/1), e.g., an intervention indicator | All |
+| `y` | Outcome with missing values | All |
+| `x` | Time-varying covariate with missing values | Intensive |
+
+The growth model is a two-level linear growth curve with random intercepts and slopes, with `group` predicting both.
+
+$$Y_{ti} = \alpha_i + \beta_i(\mathit{TIME}_{ti}) + \varepsilon_{ti}$$
+
+The intensive repeated measures model regresses the outcome on a time-varying covariate centered at its latent person mean (so the slope reflects only within-person variation), with a random intercept, a random slope, and a random within-person log-variance $\omega_i$ (a location-scale model).
+
+$$Y_{ti} = \alpha_i + \beta_i\left(X_{ti} - \mu_{Xi}\right) + \varepsilon_{ti} = \alpha_i + \beta_i\left(X^{w}_{ti}\right) + \varepsilon_{ti}$$
+
+In both designs, the level-2 model includes a binary grouping variable that predicts the random intercepts and slopes.
+
+$$\alpha_i = \gamma_{0\alpha} + \gamma_{1\alpha}(\mathit{GROUP}_i) + \zeta_{\alpha i} \qquad \beta_i = \gamma_{0\beta} + \gamma_{1\beta}(\mathit{GROUP}_i) + \zeta_{\beta i} \qquad \omega_i = \gamma_{0\omega} + \zeta_{\omega i}$$
+
+Missingness was generated from a probit selection model in which time indicators, the grouping variable, random effects, and observed and unobserved outcome scores predicted nonresponse. The data-generation scripts are in the repository.
+
+------------------------------------------------------------------------
+
+## CMAR Models
+
+The Appendix of the paper gives Blimp scripts for the two focal models under the conditionally missing at random (CMAR) assumption. These are the baselines against which every MNAR model is compared, and they appear as Model 1 in each of the paper's Tables 2 through 5; throughout this document, model numbers refer to the table for the corresponding data set. The scripts below differ from the Appendix in two ways. First, they add a `PARAMETERS` command that computes the effect sizes reported in the paper's tables; the [Analysis Examples](#analysis-examples) section defines them. Second, they include the `TIMEID` and `DROPOUT` commands even though no missingness model is specified. By default Blimp analyzes every row of the data file, imputing the outcome at every missing occasion, whereas the `DROPOUT` command with the `(monotone)` keyword removes a person's rows after the dropout occasion. Including the command in the CMAR model ensures that the baseline and the MNAR models analyze the same rows, so that their estimates, standard errors, and effect sizes are directly comparable. With the `(missing)` keyword no rows are removed, but the command is retained in the intermittent examples so that all four baselines are specified in parallel.
+
+### Growth Model
 
 The growth model is fit to the dropout and intermittent data sets. The script is identical apart from the data file.
 
@@ -338,7 +338,7 @@ The growth model is fit to the dropout and intermittent data sets. The script is
 - The `level1:` block is the growth curve. `intercept@alpha` and `time@beta` assign the random effects to the intercept and slope.
 - `PARAMETERS` defines `diff`, the mean difference between groups at the final occasion (*TIME* = 4), and `d_diff`, that difference standardized by the baseline standard deviation (the square root of the total random intercept variance plus the total within-person residual variance).
 
-### Growth Data With Dropout (Model 1)
+#### Growth Data With Dropout (Model 1 in Table 2)
 
 The first fit uses the growth data with dropout.
 
@@ -362,6 +362,7 @@ MODEL:
 PARAMETERS:                                             # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                            # random number seed
 BURN: 25000;                                            # warm-up iterations
 ITER: 25000;                                            # analysis iterations
@@ -394,7 +395,12 @@ model1_gd <- rblimp(
 output(model1_gd)
 ```
 
-### Growth Data With Intermittent Missingness (Model 1)
+```{r model1-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model1_gd)
+```
+
+#### Growth Data With Intermittent Missingness (Model 1 in Table 3)
 
 The same model applied to the growth data with intermittent missingness.
 
@@ -418,6 +424,7 @@ MODEL:
 PARAMETERS:                                             # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                            # random number seed
 BURN: 25000;                                            # warm-up iterations
 ITER: 25000;                                            # analysis iterations
@@ -450,7 +457,12 @@ model1_gi <- rblimp(
 output(model1_gi)
 ```
 
-## Intensive Repeated Measures Model
+```{r model1-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model1_gi)
+```
+
+### Intensive Repeated Measures Model
 
 The intensive model adds a time-varying covariate and a random within-person variance.
 
@@ -462,7 +474,7 @@ The intensive model adds a time-varying covariate and a random within-person var
 - `var(y) ~ intercept@omega;` assigns the random log-variance to the level-1 residual variance (a location-scale model).
 - `PARAMETERS` defines `diff` as the conditional mean difference at *X* = 0 (which is `g1a`, the group effect on the intercept) and `d_diff` as that difference divided by the square root of the total random intercept variance.
 
-### Intensive Data With Dropout (Model 1)
+#### Intensive Data With Dropout (Model 1 in Table 4)
 
 The intensive model applied to the data with dropout.
 
@@ -489,6 +501,7 @@ MODEL:
 PARAMETERS:                              # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                             # random number seed
 BURN: 25000;                             # warm-up iterations
 ITER: 25000;                             # analysis iterations
@@ -524,7 +537,12 @@ model1_id <- rblimp(
 output(model1_id)
 ```
 
-### Intensive Data With Intermittent Missingness (Model 1)
+```{r model1-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model1_id)
+```
+
+#### Intensive Data With Intermittent Missingness (Model 1 in Table 5)
 
 The same model applied to the intensive data with intermittent missingness.
 
@@ -551,6 +569,7 @@ MODEL:
 PARAMETERS:                              # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                             # random number seed
 BURN: 25000;                             # warm-up iterations
 ITER: 25000;                             # analysis iterations
@@ -586,7 +605,12 @@ model1_ii <- rblimp(
 output(model1_ii)
 ```
 
-## Model-Implied Trajectories (Figure 1)
+```{r model1-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model1_ii)
+```
+
+## Figure 1: CMAR Slopes
 
 Figure 1 in the paper shows the group-specific regression lines from the CMAR models: linear growth trajectories for the growth data (Panel A) and simple slopes of the outcome on the within-person covariate for the intensive data (Panel B). Both are reproduced here from the Model 1 fits.
 
@@ -764,7 +788,7 @@ are needed.
 
 ------------------------------------------------------------------------
 
-# Missing Data Indicators
+# Missing Data Patterns and Missing Data Indicators
 
 MNAR analyses require a secondary model with a level-1 binary missing data indicator *M* as the outcome of a probit regression. The coding of *M* depends on whether missing data patterns reflect intermittent missingness, attrition, or both (Table 1 in the paper).
 
@@ -786,7 +810,7 @@ In `rblimp` these become `timeid = 'time'` and `dropout = 'm = y (missing)'` or 
 
 ------------------------------------------------------------------------
 
-# Modeling Time Trends in Missingness
+# Modeling Time Trends in a Multilevel Missingness Model
 
 The validity of any MNAR model hinges on correctly specifying the missingness process. Although that assumption cannot be verified, the missingness model should at least reproduce the observed pattern of missing data rates over time: the latent curve SEMs do so automatically through occasion-specific intercepts, and conditioning on time strengthens the CMAR portion of the model before MNAR terms are added. In stacked data there are two strategies, polynomial functions of time and dummy-coded occasions, and the sections below evaluate both with graphical diagnostics. Following the paper, intermittent missingness is treated first because the dropout models are obtained by fixing or removing parameters from the intermittent specification.
 
@@ -805,7 +829,7 @@ Fixing the threshold at 0 and the within-person variance at 1 identifies the mod
 - `m ~ intercept | intercept;` regresses the indicator on a fixed intercept, with a random intercept after the vertical pipe.
 - The focal model is omitted, so `LATENT` and `FIXED` are not needed.
 
-### Growth Data
+### Empty Random Intercept Model: Growth Data
 
 The empty model for the growth data with intermittent missingness.
 
@@ -843,7 +867,7 @@ output(icc_gi)
 icc_latent(icc_gi)
 ```
 
-### Intensive Data
+### Empty Random Intercept Model: Intensive Data
 
 The empty model for the intensive data with intermittent missingness.
 
@@ -1067,7 +1091,7 @@ time_dummy_gi <- rblimp(
 output(time_dummy_gi)
 ```
 
-#### Observed and Predicted Probabilities
+#### Figure 3: Observed and Predicted Missing Data Rates (Growth Data; Panels A, C, E, G)
 
 The plots compare the observed occasion-specific missing data rates by group with the average individual predicted probabilities from each model (Figure 3, left column, in the paper).
 
@@ -1315,7 +1339,7 @@ time_dummy_ii <- rblimp(
 output(time_dummy_ii)
 ```
 
-#### Observed and Predicted Probabilities
+#### Figure 3: Observed and Predicted Missing Data Rates (Intensive Data; Panels B, D, F, H)
 
 Figure 3, right column, in the paper.
 
@@ -1561,7 +1585,7 @@ time_dummy_gd <- rblimp(
 output(time_dummy_gd)
 ```
 
-#### Observed and Predicted Probabilities
+#### Figure 4: Observed and Predicted Dropout Rates (Growth Data; Panels A, C, E, G)
 
 Figure 4, left column, in the paper. The rates are conditional dropout probabilities given participation at the prior occasion.
 
@@ -1822,7 +1846,7 @@ time_dummy_id <- rblimp(
 output(time_dummy_id)
 ```
 
-#### Observed and Predicted Probabilities
+#### Figure 4: Observed and Predicted Dropout Rates (Intensive Data; Panels B, D, F, H)
 
 Figure 4, right column, in the paper.
 
@@ -1880,9 +1904,9 @@ knitr::kable(miss_fit_id, caption = "Predicted Minus Observed Missingness Probab
 
 ------------------------------------------------------------------------
 
-# Shared Parameter Models
+# Multilevel Shared Parameter Models
 
-The defining feature of the Wu--Carroll (1988) shared parameter model is that the random effects of the focal model appear as predictors in the missingness model. Because the same latent variables drive both the outcome and nonresponse, they induce an association between *Y* and *M*. Any random effect in the focal model can play this role, which makes the model readily applicable to intensive repeated measures data. All models continue to use dummy-coded time. Results for every model are collected in the [Sensitivity Analysis Results](#sensitivity-analysis-results) section.
+The defining feature of the Wu--Carroll (1988) shared parameter model is that the random effects of the focal model appear as predictors in the missingness model. Because the same latent variables drive both the outcome and nonresponse, they induce an association between *Y* and *M*. Any random effect in the focal model can play this role, which makes the model readily applicable to intensive repeated measures data. All models continue to use dummy-coded time. Results for every model are collected in the [Analysis Examples](#analysis-examples) section.
 
 ## Growth Data With Dropout
 
@@ -1926,6 +1950,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -1962,6 +1987,11 @@ model2_gd <- rblimp(
 output(model2_gd)
 ```
 
+```{r model2-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model2_gd)
+```
+
 ### Model 3: Random Effects and Their Squares Predicting Attrition
 
 A linear specification lets only one tail of the random effect distribution predict higher nonresponse. Adding squared random effects allows attrition to depend on both tails (for example, both rapid improvers and non-responders disengaging). Nonlinear effects of latent variables are computationally demanding and may require larger samples.
@@ -1994,6 +2024,7 @@ MODEL:
 PARAMETERS:                                                          # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                                         # random number seed
 BURN: 25000;                                                         # warm-up iterations
 ITER: 25000;                                                         # analysis iterations
@@ -2028,6 +2059,11 @@ model3_gd <- rblimp(
   iter = 25000)
 
 output(model3_gd)
+```
+
+```{r model3-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model3_gd)
 ```
 
 ### Model 4: Random Effect Residuals Predicting Attrition
@@ -2067,6 +2103,7 @@ MODEL:
 PARAMETERS:                                               # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                              # random number seed
 BURN: 100000;                                             # warm-up iterations
 ITER: 100000;                                             # analysis iterations
@@ -2103,6 +2140,11 @@ model4_gd <- rblimp(
   iter = 100000)
 
 output(model4_gd)
+```
+
+```{r model4-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model4_gd)
 ```
 
 ## Growth Data With Intermittent Missingness
@@ -2142,6 +2184,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -2177,6 +2220,11 @@ model2_gi <- rblimp(
 output(model2_gi)
 ```
 
+```{r model2-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model2_gi)
+```
+
 ### Model 3: Random Effects and Their Squares Predicting Missingness
 
 Squared random effects allow both tails of the distribution to predict missingness.
@@ -2208,6 +2256,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 25000;                                                  # warm-up iterations
 ITER: 25000;                                                  # analysis iterations
@@ -2243,6 +2292,11 @@ model3_gi <- rblimp(
 output(model3_gi)
 ```
 
+```{r model3-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model3_gi)
+```
+
 ### Model 4: Random Effect Residuals Predicting Missingness
 
 The residualized version uses the level-2 residuals in place of the raw random effects.
@@ -2276,6 +2330,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -2311,6 +2366,11 @@ model4_gi <- rblimp(
   iter = 25000)
 
 output(model4_gi)
+```
+
+```{r model4-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model4_gi)
 ```
 
 ## Intensive Data With Dropout
@@ -2358,6 +2418,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 75000;                                                  # warm-up iterations
 ITER: 75000;                                                  # analysis iterations
@@ -2397,6 +2458,11 @@ model2_id <- rblimp(
 output(model2_id)
 ```
 
+```{r model2-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model2_id)
+```
+
 ### Model 3: Random Effects and Their Squares Predicting Attrition
 
 Squared terms for both random effects.
@@ -2432,6 +2498,7 @@ MODEL:
 PARAMETERS:                                                            # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                           # random number seed
 BURN: 200000;                                                          # warm-up iterations
 ITER: 200000;                                                          # analysis iterations
@@ -2471,6 +2538,11 @@ model3_id <- rblimp(
 output(model3_id)
 ```
 
+```{r model3-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model3_id)
+```
+
 ### Model 4: Random Effect Residuals Predicting Attrition
 
 The random intercept residual replaces the raw random intercept. Because `omega` has no level-2 predictors, it is already a residual and enters as is.
@@ -2507,6 +2579,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 25000;                                                  # warm-up iterations
 ITER: 25000;                                                  # analysis iterations
@@ -2547,6 +2620,11 @@ model4_id <- rblimp(
 output(model4_id)
 ```
 
+```{r model4-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model4_id)
+```
+
 ### Model 5: Random Effects and *X* Latent Means Predicting Attrition
 
 When both *X* and *Y* are missing at the same occasions, *M* indicates joint nonresponse. If the unseen *X* scores plausibly relate to attrition, the level-2 latent mean of *X* can be added as a shared parameter, so that nonresponse depends on the unobserved values of both variables. Blimp constructs a background model for *X* to estimate its person means and impute its missing values.
@@ -2585,6 +2663,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 200000;                                                 # warm-up iterations
 ITER: 200000;                                                 # analysis iterations
@@ -2624,6 +2703,11 @@ model5_id <- rblimp(
 output(model5_id)
 ```
 
+```{r model5-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model5_id)
+```
+
 ## Intensive Data With Intermittent Missingness
 
 The intermittent versions parallel the growth models: no switch, an estimable intercept, a group main effect, and a random intercept in the missingness model. The log-variance random effect replaces the random slope as a predictor.
@@ -2658,6 +2742,7 @@ MODEL:
 PARAMETERS:                                               # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                              # random number seed
 BURN: 25000;                                              # warm-up iterations
 ITER: 25000;                                              # analysis iterations
@@ -2696,6 +2781,11 @@ model2_ii <- rblimp(
 output(model2_ii)
 ```
 
+```{r model2-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model2_ii)
+```
+
 ### Model 3: Random Effects and Their Squares Predicting Missingness
 
 Squared random effects.
@@ -2726,6 +2816,7 @@ MODEL:
 PARAMETERS:                                                     # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                    # random number seed
 BURN: 25000;                                                    # warm-up iterations
 ITER: 25000;                                                    # analysis iterations
@@ -2764,6 +2855,11 @@ model3_ii <- rblimp(
 output(model3_ii)
 ```
 
+```{r model3-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model3_ii)
+```
+
 ### Model 4: Random Effect Residuals Predicting Missingness
 
 Residualized random intercept with the log-variance random effect.
@@ -2795,6 +2891,7 @@ MODEL:
 PARAMETERS:                                               # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                              # random number seed
 BURN: 25000;                                              # warm-up iterations
 ITER: 25000;                                              # analysis iterations
@@ -2834,6 +2931,11 @@ model4_ii <- rblimp(
 output(model4_ii)
 ```
 
+```{r model4-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model4_ii)
+```
+
 ### Model 5: Random Effects and *X* Latent Means Predicting Missingness
 
 Adds the latent person mean of *X*.
@@ -2864,6 +2966,7 @@ MODEL:
 PARAMETERS:                                               # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                              # random number seed
 BURN: 25000;                                              # warm-up iterations
 ITER: 25000;                                              # analysis iterations
@@ -2902,9 +3005,14 @@ model5_ii <- rblimp(
 output(model5_ii)
 ```
 
+```{r model5-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model5_ii)
+```
+
 ------------------------------------------------------------------------
 
-# Selection Models
+# Multilevel Selection Models
 
 In the Diggle--Kenward (1994) selection model, occasion-specific realizations of the outcome, rather than stable levels or trends, drive nonresponse. The multilevel version requires a lagged outcome $Y_{t-1}$ that shifts each person's scores down by one row; Blimp's DSEM facilities create and impute lagged variables when a variable name carries the `.lag` suffix. Lagging requires each person to have a row for every occasion, and Blimp inserts missing rows to make the data time-balanced if they are not.
 
@@ -2949,6 +3057,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -2985,6 +3094,11 @@ model5_gd <- rblimp(
 output(model5_gd)
 ```
 
+```{r model5-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model5_gd)
+```
+
 ### Model 6: Outcome, its Lag, and its Square Predicting Attrition
 
 A linear term lets only one tail of the outcome distribution predict higher attrition. Adding $Y^2$ allows both sudden increases and sudden decreases to raise the probability of dropout.
@@ -3018,6 +3132,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 50000;                                             # warm-up iterations
 ITER: 50000;                                             # analysis iterations
@@ -3052,6 +3167,11 @@ model6_gd <- rblimp(
   iter = 50000)
 
 output(model6_gd)
+```
+
+```{r model6-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model6_gd)
 ```
 
 ### Model 7: Detrended Outcome and its Lag Predicting Attrition
@@ -3091,6 +3211,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 200000;                                            # warm-up iterations
 ITER: 200000;                                            # analysis iterations
@@ -3129,6 +3250,11 @@ model7_gd <- rblimp(
 output(model7_gd)
 ```
 
+```{r model7-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model7_gd)
+```
+
 ## Growth Data With Intermittent Missingness
 
 With missingness at every occasion the switch is unnecessary, the intercept and group effect are estimable, and a random intercept is added.
@@ -3164,6 +3290,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -3199,6 +3326,11 @@ model5_gi <- rblimp(
 output(model5_gi)
 ```
 
+```{r model5-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model5_gi)
+```
+
 #### Alternate Specification: Lag Activated After Baseline
 
 The specification below replaces the imputed baseline lag with zero, which is analogous to the wide-format SEM that omits the cross-lagged effect at the first occasion. In the illustrative data the two approaches give the same focal-model estimates.
@@ -3231,6 +3363,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -3267,6 +3400,11 @@ model5_alt_gi <- rblimp(
 output(model5_alt_gi)
 ```
 
+```{r model5-alt-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model5_alt_gi)
+```
+
 ```{r model5-alt-compare-gi, class.source="fold-hide"}
 cbind(extract_growth_params(model5_gi, "Default"),
       extract_growth_params(model5_alt_gi, "Lag0"))
@@ -3299,6 +3437,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -3334,6 +3473,11 @@ model6_gi <- rblimp(
 output(model6_gi)
 ```
 
+```{r model6-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model6_gi)
+```
+
 ### Model 7: Detrended Outcome and its Lag Predicting Missingness
 
 Detrended outcome and lag.
@@ -3367,6 +3511,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 200000;                                            # warm-up iterations
 ITER: 200000;                                            # analysis iterations
@@ -3402,6 +3547,11 @@ model7_gi <- rblimp(
   iter = 200000)
 
 output(model7_gi)
+```
+
+```{r model7-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model7_gi)
 ```
 
 ## Intensive Data With Dropout
@@ -3441,6 +3591,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 25000;                                                  # warm-up iterations
 ITER: 25000;                                                  # analysis iterations
@@ -3480,6 +3631,11 @@ model6_id <- rblimp(
 output(model6_id)
 ```
 
+```{r model6-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model6_id)
+```
+
 ### Model 7: Outcome, its Lag, and its Square Predicting Attrition
 
 Adds the squared outcome.
@@ -3515,6 +3671,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 200000;                                                 # warm-up iterations
 ITER: 200000;                                                 # analysis iterations
@@ -3554,6 +3711,11 @@ model7_id <- rblimp(
 output(model7_id)
 ```
 
+```{r model7-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model7_id)
+```
+
 ### Model 8: Centered Outcome and its Lag Predicting Attrition
 
 In a stationary process the raw *Y* is the sum of a person's latent mean and an occasion-specific deviation, so the raw-score slopes are again blended. McNeish (2025) subtracts the latent person mean (the random intercept) from the raw outcomes; the centering is carried out within each MCMC iteration using the current random intercept.
@@ -3591,6 +3753,7 @@ MODEL:
 PARAMETERS:                                                        # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                       # random number seed
 BURN: 75000;                                                       # warm-up iterations
 ITER: 75000;                                                       # analysis iterations
@@ -3630,6 +3793,11 @@ model8_id <- rblimp(
 output(model8_id)
 ```
 
+```{r model8-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model8_id)
+```
+
 ### Model 9: Outcome, its Lag, and *X* Predicting Attrition
 
 When *X* and *Y* are jointly missing, the covariate and its lag can be added to the dropout model so that nonresponse depends on the unseen values of both variables.
@@ -3666,6 +3834,7 @@ MODEL:
 PARAMETERS:                                                   # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                  # random number seed
 BURN: 25000;                                                  # warm-up iterations
 ITER: 25000;                                                  # analysis iterations
@@ -3706,6 +3875,11 @@ model9_id <- rblimp(
 output(model9_id)
 ```
 
+```{r model9-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model9_id)
+```
+
 ## Intensive Data With Intermittent Missingness
 
 The intermittent versions drop the switch and estimate the intercept, group effect, and random intercept. The baseline lag is imputed as in the growth example; with 20 occasions the choice of prior has little influence.
@@ -3740,6 +3914,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 25000;                                             # warm-up iterations
 ITER: 25000;                                             # analysis iterations
@@ -3778,6 +3953,11 @@ model6_ii <- rblimp(
 output(model6_ii)
 ```
 
+```{r model6-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model6_ii)
+```
+
 ### Model 7: Outcome, its Lag, and its Square Predicting Missingness
 
 
@@ -3808,6 +3988,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 50000;                                             # warm-up iterations
 ITER: 50000;                                             # analysis iterations
@@ -3846,6 +4027,11 @@ model7_ii <- rblimp(
 output(model7_ii)
 ```
 
+```{r model7-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model7_ii)
+```
+
 ### Model 8: Centered Outcome and its Lag Predicting Missingness
 
 
@@ -3876,6 +4062,7 @@ MODEL:
 PARAMETERS:                                                     # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                    # random number seed
 BURN: 75000;                                                    # warm-up iterations
 ITER: 75000;                                                    # analysis iterations
@@ -3914,6 +4101,11 @@ model8_ii <- rblimp(
 output(model8_ii)
 ```
 
+```{r model8-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model8_ii)
+```
+
 ### Model 9: Outcome, its Lag, and *X* Predicting Missingness
 
 
@@ -3945,6 +4137,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 50000;                                             # warm-up iterations
 ITER: 50000;                                             # analysis iterations
@@ -3984,17 +4177,22 @@ model9_ii <- rblimp(
 output(model9_ii)
 ```
 
+```{r model9-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model9_ii)
+```
+
 ------------------------------------------------------------------------
 
-# Combined Models
+# Combining Within- and Between-Person Determinants of Missingness
 
 Detrending and centering isolate within-person deviations. A disaggregated missingness model includes both the within-person deviations and the between-person random effects, so that a person's overall trajectory (or level) and an episode that departs from it can each predict nonresponse with its own coefficient. The raw-score selection model implicitly constrains the two to be equal. The growth version is shown below; the intensive version replaces the detrended outcome with the person-mean-centered outcome and the random slope with the log-variance random effect. These models are computationally demanding and almost certainly require large samples.
 
 $$M^*_{ti} = \lambda_0 + \lambda_1(\mathit{GROUP}_i) + \sum_{t=1}^{T-1}\left[\lambda_{t0}(O_{ti}) + \lambda_{t1}(O_{ti})(\mathit{GROUP}_i)\right] + \lambda_2(Y^{w}_{ti}) + \lambda_3(Y^{w}_{t-1,i}) + \lambda_4(\alpha_i) + \lambda_5(\beta_i) + u_i + z_{ti}$$
 
-## Growth Data
+## Growth Data With Dropout
 
-### Model 8: Disaggregated Model (Dropout)
+### Model 8: Disaggregated Model
 
 Detrended outcome and lag plus the random intercept and slope, all switched on after baseline.
 
@@ -4029,6 +4227,7 @@ MODEL:
 PARAMETERS:                                                    # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                                   # random number seed
 BURN: 100000;                                                  # warm-up iterations
 ITER: 100000;                                                  # analysis iterations
@@ -4067,7 +4266,14 @@ model8_gd <- rblimp(
 output(model8_gd)
 ```
 
-### Model 8: Disaggregated Model (Intermittent)
+```{r model8-gd-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model8_gd)
+```
+
+## Growth Data With Intermittent Missingness
+
+### Model 8: Disaggregated Model
 
 The intermittent version with no switch.
 
@@ -4100,6 +4306,7 @@ MODEL:
 PARAMETERS:                                              # derived quantities (effect sizes)
   diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b));
   d_diff = diff / sqrt(y.totalvar + alpha.totalvar);
+# SIMPLE: time | group;                                  # simple slopes for plotting (next full run)
 SEED: 90291;                                             # random number seed
 BURN: 200000;                                            # warm-up iterations
 ITER: 200000;                                            # analysis iterations
@@ -4137,9 +4344,14 @@ model8_gi <- rblimp(
 output(model8_gi)
 ```
 
-## Intensive Data
+```{r model8-gi-plot, eval=FALSE}
+# requires simple = 'time | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ time | group, model8_gi)
+```
 
-### Model 10: Disaggregated Model (Dropout)
+## Intensive Data With Dropout
+
+### Model 10: Disaggregated Model
 
 Centered outcome and lag plus the random intercept and log-variance, switched on at occasion 7.
 
@@ -4174,6 +4386,7 @@ MODEL:
 PARAMETERS:                                                                        # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                                       # random number seed
 BURN: 200000;                                                                      # warm-up iterations
 ITER: 200000;                                                                      # analysis iterations
@@ -4213,7 +4426,14 @@ model10_id <- rblimp(
 output(model10_id)
 ```
 
-### Model 10: Disaggregated Model (Intermittent)
+```{r model10-id-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model10_id)
+```
+
+## Intensive Data With Intermittent Missingness
+
+### Model 10: Disaggregated Model
 
 The intermittent version.
 
@@ -4243,6 +4463,7 @@ MODEL:
 PARAMETERS:                                                                 # derived quantities (effect sizes)
   diff = g1a;
   d_diff = diff / sqrt(alpha.totalvar);
+# SIMPLE: x | group;                                     # simple slopes for plotting (next full run)
 SEED: 90291;                                                                # random number seed
 BURN: 75000;                                                                # warm-up iterations
 ITER: 75000;                                                                # analysis iterations
@@ -4281,9 +4502,14 @@ model10_ii <- rblimp(
 output(model10_ii)
 ```
 
+```{r model10-ii-plot, eval=FALSE}
+# requires simple = 'x | group' in the rblimp() call above; enabled at the next full run
+simple_plot(y ~ x | group, model10_ii)
+```
+
 ------------------------------------------------------------------------
 
-# Sensitivity Analysis Results
+# Analysis Examples
 
 This section collects the results of every model and reproduces Tables 2 through 5 of the paper, adding the full set of parameter estimates and the convergence diagnostics.
 

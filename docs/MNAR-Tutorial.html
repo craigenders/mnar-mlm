@@ -9,11 +9,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Craig Enders" />
+<meta name="author" content="Craig K. Enders, Brian T. Keller, and J.P. Laurenceau" />
 
-<meta name="date" content="2026-10-29" />
+<meta name="date" content="2026-10-30" />
 
-<title>Missing Not at Random Models for Multilevel Analyses</title>
+<title>Supplemental Materials: Analysis Examples</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2939,11 +2939,13 @@ font-size: 0.95em;
 
 
 
-<h1 class="title toc-ignore">Missing Not at Random Models for Multilevel
-Analyses</h1>
-<h3 class="subtitle">An rblimp Tutorial</h3>
-<h4 class="author">Craig Enders</h4>
-<h4 class="date">October 29, 2026</h4>
+<h1 class="title toc-ignore">Supplemental Materials: Analysis
+Examples</h1>
+<h3 class="subtitle">Missing Not at Random Models for Multilevel
+Analyses of Longitudinal and Intensive Longitudinal Data</h3>
+<h4 class="author">Craig K. Enders, Brian T. Keller, and J.P.
+Laurenceau</h4>
+<h4 class="date">October 30, 2026</h4>
 
 </div>
 
@@ -2959,336 +2961,53 @@ th, td { padding-right: 2.5em !important; }
 <div id="overview" class="section level1">
 <h1>Overview</h1>
 <p>This tutorial accompanies “Missing Not at Random Models for
-Multilevel Analyses.” The paper describes how to specify shared
-parameter and selection models for multilevel analyses of longitudinal
-change and intensive longitudinal data, and this document walks through
-every analysis in the paper with executable <code>rblimp</code> code,
-the equivalent Blimp script, and annotated output. The two documents are
+Multilevel Analyses of Longitudinal and Intensive Longitudinal Data.”
+The paper describes how to specify shared parameter and selection models
+for multilevel analyses of longitudinal change and intensive
+longitudinal data, and this document walks through every analysis in the
+paper with executable code and annotated output. The two documents are
 meant to be read together: the paper explains the models, and this
-tutorial explains the syntax. Section headings here follow the paper, so
-a reader can move from a paper section to the matching code.</p>
-<p>The GitHub repository at <a href="https://github.com/craigenders/mnar-mlm">https://github.com/craigenders/mnar-mlm</a>
-includes a PDF of the paper, the four example data sets, the executable
-R scripts, this tutorial, and a companion document on the equivalence
-between dummy-coded missingness models and item response theory (IRT)
+tutorial explains the syntax. The major section headings here match the
+paper’s, so a reader can move from a paper section to the matching code,
+and the model numbers correspond to Tables 2 through 5 in the paper.
+Paper sections with no analyses (the Introduction, Latent Curve MNAR
+Models, and the Discussion) are omitted, and Figure 2 (path diagrams) is
+not reproduced; Figures 1, 3, and 4 are reproduced in the sections where
+the paper introduces them.</p>
+<p>Every analysis is presented twice, as a Blimp script and as the
+equivalent <code>rblimp()</code> function call in R. The two
+specifications are identical: each Blimp command maps onto an
+<code>rblimp</code> argument of the same name, and both run the same
+Blimp computational engine and produce the same output. The one
+difference is graphics. The missingness-probability figures and
+model-implied trajectories in this tutorial are drawn with R plotting
+functions that operate on <code>rblimp</code> model objects, so those
+sections are R-only; everything else can be run from either
+interface.</p>
+<p><strong>Software.</strong> Blimp is a free download for macOS,
+Windows, and Linux from <a href="https://www.appliedmissingdata.com/blimp">https://www.appliedmissingdata.com/blimp</a>;
+rblimp is on CRAN (<code>install.packages(&quot;rblimp&quot;)</code>) and requires
+Blimp to be installed first. Two short documents in the repository cover
+the setup: the <a href="https://craigenders.github.io/mnar-mlm/Blimp-Installation-Guide.html">Blimp
+Installation Guide</a> walks through installing Blimp, Blimp Studio, and
+rblimp on each platform, and the <a href="https://craigenders.github.io/mnar-mlm/Blimp-Scripting-Quick-Start.html">Blimp
+Scripting Quick Start</a> introduces the scripting language and the
+correspondence between Blimp commands and <code>rblimp()</code>
+arguments. Readers new to Blimp should skim both before the <a href="#blimp-and-rblimp">Blimp and rblimp</a> section below, which
+explains the specific commands this tutorial uses.</p>
+<p><strong>Online materials.</strong> The GitHub repository at <a href="https://github.com/craigenders/mnar-mlm">https://github.com/craigenders/mnar-mlm</a>
+includes a PDF of the paper, the four example data sets
+(<code>data/</code>), the R scripts (<code>rblimp/</code>), the Blimp
+scripts (<code>blimp/</code>), this tutorial and the companion documents
+(<code>docs/</code>), including a document on the equivalence between
+dummy-coded missingness models and item response theory (IRT)
 missingness models.</p>
-<table>
-<colgroup>
-<col width="50%" />
-<col width="50%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Paper section</th>
-<th align="left">Tutorial section</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Illustrative Models; Appendix</td>
-<td align="left"><a href="#illustrative-data">Illustrative Data</a> and
-<a href="#cmar-models">CMAR Models</a></td>
-</tr>
-<tr class="even">
-<td align="left">Missing Data Patterns and Missing Data Indicators</td>
-<td align="left"><a href="#missing-data-indicators">Missing Data
-Indicators</a></td>
-</tr>
-<tr class="odd">
-<td align="left">Modeling Time Trends in a Multilevel Missingness
-Model</td>
-<td align="left"><a href="#modeling-time-trends-in-missingness">Modeling
-Time Trends in Missingness</a></td>
-</tr>
-<tr class="even">
-<td align="left">Multilevel Shared Parameter Models</td>
-<td align="left"><a href="#shared-parameter-models">Shared Parameter
-Models</a></td>
-</tr>
-<tr class="odd">
-<td align="left">Multilevel Selection Models</td>
-<td align="left"><a href="#selection-models">Selection Models</a></td>
-</tr>
-<tr class="even">
-<td align="left">Combining Within- and Between-Person Determinants</td>
-<td align="left"><a href="#combined-models">Combined Models</a></td>
-</tr>
-<tr class="odd">
-<td align="left">Analysis Examples (Tables 2–5)</td>
-<td align="left"><a href="#sensitivity-analysis-results">Sensitivity
-Analysis Results</a></td>
-</tr>
-</tbody>
-</table>
-<p>The model numbers used throughout correspond to Tables 2 through 5 in
-the paper. The growth examples use eight models and the intensive
-longitudinal examples use ten.</p>
-<p><strong>Growth examples (Tables 2 and 3)</strong></p>
-<table>
-<colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Model</th>
-<th align="left">Description</th>
-<th align="left">Section</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left"><strong>1</strong></td>
-<td align="left">Conditionally missing at random (CMAR)</td>
-<td align="left">CMAR Models</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>2</strong></td>
-<td align="left">Random effects predicting missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>3</strong></td>
-<td align="left">Random effects and their squares predicting
-missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>4</strong></td>
-<td align="left">Random effect residuals predicting missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>5</strong></td>
-<td align="left">Outcome and its lag predicting missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>6</strong></td>
-<td align="left">Outcome, its lag, and its square predicting
-missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>7</strong></td>
-<td align="left">Detrended outcome and its lag predicting
-missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>8</strong></td>
-<td align="left">Disaggregated model with outcome and random
-effects</td>
-<td align="left">Combined</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Intensive longitudinal examples (Tables 4 and 5)</strong></p>
-<table>
-<colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Model</th>
-<th align="left">Description</th>
-<th align="left">Section</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left"><strong>1</strong></td>
-<td align="left">Conditionally missing at random (CMAR)</td>
-<td align="left">CMAR Models</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>2</strong></td>
-<td align="left">Random effects predicting missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>3</strong></td>
-<td align="left">Random effects and their squares predicting
-missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>4</strong></td>
-<td align="left">Random effect residuals predicting missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>5</strong></td>
-<td align="left">Random effects and <em>X</em> latent means predicting
-missingness</td>
-<td align="left">Shared Parameter</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>6</strong></td>
-<td align="left">Outcome and its lag predicting missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>7</strong></td>
-<td align="left">Outcome, its lag, and its square predicting
-missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>8</strong></td>
-<td align="left">Centered outcome and its lag predicting
-missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="odd">
-<td align="left"><strong>9</strong></td>
-<td align="left">Outcome, its lag, and <em>X</em> predicting
-missingness</td>
-<td align="left">Selection</td>
-</tr>
-<tr class="even">
-<td align="left"><strong>10</strong></td>
-<td align="left">Disaggregated model with outcome and random
-effects</td>
-<td align="left">Combined</td>
-</tr>
-</tbody>
-</table>
 <hr />
 </div>
-<div id="illustrative-data" class="section level1">
-<h1>Illustrative Data</h1>
-<p>The paper uses simulated data because no single real data set
-includes the full range of features that influence the specification of
-MNAR models. Two designs are crossed with two missing data patterns,
-giving four data sets.</p>
-<table style="width:100%;">
-<colgroup>
-<col width="16%" />
-<col width="16%" />
-<col width="16%" />
-<col width="16%" />
-<col width="16%" />
-<col width="16%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Data set</th>
-<th align="left">File</th>
-<th align="right"><em>N</em></th>
-<th align="right"><em>T</em></th>
-<th align="left">Design</th>
-<th align="left">Missingness</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Growth, dropout</td>
-<td align="left"><code>growth-dropout.csv</code></td>
-<td align="right">500</td>
-<td align="right">5</td>
-<td align="left">Linear growth</td>
-<td align="left">Monotone attrition after baseline</td>
-</tr>
-<tr class="even">
-<td align="left">Growth, intermittent</td>
-<td align="left"><code>growth-intermittent.csv</code></td>
-<td align="right">500</td>
-<td align="right">5</td>
-<td align="left">Linear growth</td>
-<td align="left">Intermittent at every occasion</td>
-</tr>
-<tr class="odd">
-<td align="left">Intensive, dropout</td>
-<td align="left"><code>intensive-dropout.csv</code></td>
-<td align="right">125</td>
-<td align="right">20</td>
-<td align="left">Stationary process with a time-varying covariate and
-heterogeneous variance</td>
-<td align="left">Monotone attrition after occasion 7</td>
-</tr>
-<tr class="even">
-<td align="left">Intensive, intermittent</td>
-<td align="left"><code>intensive-intermittent.csv</code></td>
-<td align="right">125</td>
-<td align="right">20</td>
-<td align="left">Same</td>
-<td align="left">Intermittent at every occasion</td>
-</tr>
-</tbody>
-</table>
-<p>Each file has 2,500 rows in stacked (long) format, one row per person
-per occasion, with missing values coded <code>NA</code>.</p>
-<table>
-<colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Variable</th>
-<th align="left">Definition</th>
-<th align="left">Data sets</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left"><code>l2id</code></td>
-<td align="left">Person identifier (level-2 cluster)</td>
-<td align="left">All</td>
-</tr>
-<tr class="even">
-<td align="left"><code>time</code></td>
-<td align="left">Occasion index, coded 0, 1, …, <em>T</em> – 1</td>
-<td align="left">All</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>group</code></td>
-<td align="left">Binary grouping variable (0/1), e.g., an intervention
-indicator</td>
-<td align="left">All</td>
-</tr>
-<tr class="even">
-<td align="left"><code>y</code></td>
-<td align="left">Outcome with missing values</td>
-<td align="left">All</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>x</code></td>
-<td align="left">Time-varying covariate with missing values</td>
-<td align="left">Intensive</td>
-</tr>
-</tbody>
-</table>
-<p>The growth model is a two-level linear growth curve with random
-intercepts and slopes, with <code>group</code> predicting both.</p>
-<p><span class="math display">\[Y_{ti} = \alpha_i +
-\beta_i(\mathit{TIME}_{ti}) + \varepsilon_{ti}\]</span></p>
-<p>The intensive repeated measures model regresses the outcome on a
-time-varying covariate centered at its latent person mean (so the slope
-reflects only within-person variation), with a random intercept, a
-random slope, and a random within-person log-variance <span class="math inline">\(\omega_i\)</span> (a location-scale model).</p>
-<p><span class="math display">\[Y_{ti} = \alpha_i + \beta_i\left(X_{ti}
-- \mu_{Xi}\right) + \varepsilon_{ti} = \alpha_i +
-\beta_i\left(X^{w}_{ti}\right) + \varepsilon_{ti}\]</span></p>
-<p>In both designs, the level-2 model includes a binary grouping
-variable that predicts the random intercepts and slopes.</p>
-<p><span class="math display">\[\alpha_i = \gamma_{0\alpha} +
-\gamma_{1\alpha}(\mathit{GROUP}_i) + \zeta_{\alpha i} \qquad \beta_i =
-\gamma_{0\beta} + \gamma_{1\beta}(\mathit{GROUP}_i) + \zeta_{\beta i}
-\qquad \omega_i = \gamma_{0\omega} + \zeta_{\omega i}\]</span></p>
-<p>Missingness was generated from a probit selection model in which time
-indicators, the grouping variable, random effects, and observed and
-unobserved outcome scores predicted nonresponse. The data-generation
-scripts are in the repository.</p>
-<hr />
-</div>
-<div id="blimp-and-rblimp" class="section level1">
-<h1>Blimp and rblimp</h1>
+<div id="getting-started" class="section level1">
+<h1>Getting Started</h1>
+<div id="blimp-and-rblimp" class="section level2">
+<h2>Blimp and rblimp</h2>
 <p>Each analysis below is shown twice: as a Blimp script and as the
 equivalent <code>rblimp()</code> function call in R. The two are
 interchangeable. A Blimp script is a plain-text file with a
@@ -3439,8 +3158,6 @@ data.</li>
 </ul>
 <hr />
 </div>
-<div id="setup" class="section level1">
-<h1>Setup</h1>
 <div id="load-packages" class="section level2">
 <h2>Load Packages</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
@@ -3451,15 +3168,15 @@ data.</li>
 <h2>Read Data</h2>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>github <span class="ot">&lt;-</span> <span class="st">&#39;https://raw.githubusercontent.com/craigenders/mnar-mlm/main/&#39;</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>growth_dropout         <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;growth-dropout.csv&#39;</span>),         <span class="at">stringsAsFactors =</span> T)</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>growth_intermittent    <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;growth-intermittent.csv&#39;</span>),    <span class="at">stringsAsFactors =</span> T)</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>intensive_dropout      <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;intensive-dropout.csv&#39;</span>),      <span class="at">stringsAsFactors =</span> T)</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>intensive_intermittent <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;intensive-intermittent.csv&#39;</span>), <span class="at">stringsAsFactors =</span> T)</span></code></pre></div>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>growth_dropout         <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;data/growth-dropout.csv&#39;</span>),         <span class="at">stringsAsFactors =</span> T)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>growth_intermittent    <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;data/growth-intermittent.csv&#39;</span>),    <span class="at">stringsAsFactors =</span> T)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>intensive_dropout      <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;data/intensive-dropout.csv&#39;</span>),      <span class="at">stringsAsFactors =</span> T)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>intensive_intermittent <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(github, <span class="st">&#39;data/intensive-intermittent.csv&#39;</span>), <span class="at">stringsAsFactors =</span> T)</span></code></pre></div>
 </div>
 <div id="plotting-functions" class="section level2">
 <h2>Plotting Functions</h2>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R&#39;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R&#39;</span>)</span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/craigenders/mnar-mlm/main/rblimp/mnar-plotting.R&#39;</span>)</span></code></pre></div>
 <p>The second file defines <code>plot_means()</code>, which draws
 averages of any variable in an <code>rblimp</code> model’s imputed data
 by occasion and, optionally, by group. It is used throughout the
@@ -3633,28 +3350,159 @@ tables at the end of the tutorial.</p>
 <hr />
 </div>
 </div>
-<div id="cmar-models" class="section level1">
-<h1>CMAR Models</h1>
+<div id="illustrative-models" class="section level1">
+<h1>Illustrative Models</h1>
+<div id="illustrative-data" class="section level2">
+<h2>Illustrative Data</h2>
+<p>The paper uses simulated data because no single real data set
+includes the full range of features that influence the specification of
+MNAR models. Two designs are crossed with two missing data patterns,
+giving four data sets.</p>
+<table style="width:100%;">
+<colgroup>
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Data set</th>
+<th align="left">File</th>
+<th align="right"><em>N</em></th>
+<th align="right"><em>T</em></th>
+<th align="left">Design</th>
+<th align="left">Missingness</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Growth, dropout</td>
+<td align="left"><code>growth-dropout.csv</code></td>
+<td align="right">500</td>
+<td align="right">5</td>
+<td align="left">Linear growth</td>
+<td align="left">Monotone attrition after baseline</td>
+</tr>
+<tr class="even">
+<td align="left">Growth, intermittent</td>
+<td align="left"><code>growth-intermittent.csv</code></td>
+<td align="right">500</td>
+<td align="right">5</td>
+<td align="left">Linear growth</td>
+<td align="left">Intermittent at every occasion</td>
+</tr>
+<tr class="odd">
+<td align="left">Intensive, dropout</td>
+<td align="left"><code>intensive-dropout.csv</code></td>
+<td align="right">125</td>
+<td align="right">20</td>
+<td align="left">Stationary process with a time-varying covariate and
+heterogeneous variance</td>
+<td align="left">Monotone attrition after occasion 7</td>
+</tr>
+<tr class="even">
+<td align="left">Intensive, intermittent</td>
+<td align="left"><code>intensive-intermittent.csv</code></td>
+<td align="right">125</td>
+<td align="right">20</td>
+<td align="left">Same</td>
+<td align="left">Intermittent at every occasion</td>
+</tr>
+</tbody>
+</table>
+<p>Each file has 2,500 rows in stacked (long) format, one row per person
+per occasion, with missing values coded <code>NA</code>.</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Variable</th>
+<th align="left">Definition</th>
+<th align="left">Data sets</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>l2id</code></td>
+<td align="left">Person identifier (level-2 cluster)</td>
+<td align="left">All</td>
+</tr>
+<tr class="even">
+<td align="left"><code>time</code></td>
+<td align="left">Occasion index, coded 0, 1, …, <em>T</em> – 1</td>
+<td align="left">All</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>group</code></td>
+<td align="left">Binary grouping variable (0/1), e.g., an intervention
+indicator</td>
+<td align="left">All</td>
+</tr>
+<tr class="even">
+<td align="left"><code>y</code></td>
+<td align="left">Outcome with missing values</td>
+<td align="left">All</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>x</code></td>
+<td align="left">Time-varying covariate with missing values</td>
+<td align="left">Intensive</td>
+</tr>
+</tbody>
+</table>
+<p>The growth model is a two-level linear growth curve with random
+intercepts and slopes, with <code>group</code> predicting both.</p>
+<p><span class="math display">\[Y_{ti} = \alpha_i +
+\beta_i(\mathit{TIME}_{ti}) + \varepsilon_{ti}\]</span></p>
+<p>The intensive repeated measures model regresses the outcome on a
+time-varying covariate centered at its latent person mean (so the slope
+reflects only within-person variation), with a random intercept, a
+random slope, and a random within-person log-variance <span class="math inline">\(\omega_i\)</span> (a location-scale model).</p>
+<p><span class="math display">\[Y_{ti} = \alpha_i + \beta_i\left(X_{ti}
+- \mu_{Xi}\right) + \varepsilon_{ti} = \alpha_i +
+\beta_i\left(X^{w}_{ti}\right) + \varepsilon_{ti}\]</span></p>
+<p>In both designs, the level-2 model includes a binary grouping
+variable that predicts the random intercepts and slopes.</p>
+<p><span class="math display">\[\alpha_i = \gamma_{0\alpha} +
+\gamma_{1\alpha}(\mathit{GROUP}_i) + \zeta_{\alpha i} \qquad \beta_i =
+\gamma_{0\beta} + \gamma_{1\beta}(\mathit{GROUP}_i) + \zeta_{\beta i}
+\qquad \omega_i = \gamma_{0\omega} + \zeta_{\omega i}\]</span></p>
+<p>Missingness was generated from a probit selection model in which time
+indicators, the grouping variable, random effects, and observed and
+unobserved outcome scores predicted nonresponse. The data-generation
+scripts are in the repository.</p>
+<hr />
+</div>
+<div id="cmar-models" class="section level2">
+<h2>CMAR Models</h2>
 <p>The Appendix of the paper gives Blimp scripts for the two focal
 models under the conditionally missing at random (CMAR) assumption.
-These are the baselines against which every MNAR model is compared. The
-scripts below differ from the Appendix in two ways. First, they add a
-<code>PARAMETERS</code> command that computes the effect sizes reported
-in the paper’s tables; the <a href="#sensitivity-analysis-results">Sensitivity Analysis Results</a>
-section defines them. Second, they include the <code>TIMEID</code> and
-<code>DROPOUT</code> commands even though no missingness model is
-specified. By default Blimp analyzes every row of the data file,
-imputing the outcome at every missing occasion, whereas the
-<code>DROPOUT</code> command with the <code>(monotone)</code> keyword
-removes a person’s rows after the dropout occasion. Including the
-command in the CMAR model ensures that the baseline and the MNAR models
-analyze the same rows, so that their estimates, standard errors, and
-effect sizes are directly comparable. With the <code>(missing)</code>
-keyword no rows are removed, but the command is retained in the
-intermittent examples so that all four baselines are specified in
-parallel.</p>
-<div id="growth-model" class="section level2">
-<h2>Growth Model</h2>
+These are the baselines against which every MNAR model is compared, and
+they appear as Model 1 in each of the paper’s Tables 2 through 5;
+throughout this document, model numbers refer to the table for the
+corresponding data set. The scripts below differ from the Appendix in
+two ways. First, they add a <code>PARAMETERS</code> command that
+computes the effect sizes reported in the paper’s tables; the <a href="#analysis-examples">Analysis Examples</a> section defines them.
+Second, they include the <code>TIMEID</code> and <code>DROPOUT</code>
+commands even though no missingness model is specified. By default Blimp
+analyzes every row of the data file, imputing the outcome at every
+missing occasion, whereas the <code>DROPOUT</code> command with the
+<code>(monotone)</code> keyword removes a person’s rows after the
+dropout occasion. Including the command in the CMAR model ensures that
+the baseline and the MNAR models analyze the same rows, so that their
+estimates, standard errors, and effect sizes are directly comparable.
+With the <code>(missing)</code> keyword no rows are removed, but the
+command is retained in the intermittent examples so that all four
+baselines are specified in parallel.</p>
+<div id="growth-model" class="section level3">
+<h3>Growth Model</h3>
 <p>The growth model is fit to the dropout and intermittent data sets.
 The script is identical apart from the data file.</p>
 <p><em>Command by command:</em></p>
@@ -3683,8 +3531,8 @@ difference between groups at the final occasion (<em>TIME</em> = 4), and
 standard deviation (the square root of the total random intercept
 variance plus the total within-person residual variance).</li>
 </ul>
-<div id="growth-data-with-dropout-model-1" class="section level3">
-<h3>Growth Data With Dropout (Model 1)</h3>
+<div id="growth-data-with-dropout-model-1-in-table-2" class="section level4">
+<h4>Growth Data With Dropout (Model 1 in Table 2)</h4>
 <p>The first fit uses the growth data with dropout.</p>
 <p><strong>Blimp script</strong></p>
 <pre><code>DATA: growth-dropout.csv;                               # raw data file
@@ -3994,8 +3842,8 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
 
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="growth-data-with-intermittent-missingness-model-1" class="section level3">
-<h3>Growth Data With Intermittent Missingness (Model 1)</h3>
+<div id="growth-data-with-intermittent-missingness-model-1-in-table-3" class="section level4">
+<h4>Growth Data With Intermittent Missingness (Model 1 in Table 3)</h4>
 <p>The same model applied to the growth data with intermittent
 missingness.</p>
 <p><strong>Blimp script</strong></p>
@@ -4305,8 +4153,8 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
 </div>
-<div id="intensive-repeated-measures-model" class="section level2">
-<h2>Intensive Repeated Measures Model</h2>
+<div id="intensive-repeated-measures-model" class="section level3">
+<h3>Intensive Repeated Measures Model</h3>
 <p>The intensive model adds a time-varying covariate and a random
 within-person variance.</p>
 <p><em>Command by command:</em></p>
@@ -4329,8 +4177,8 @@ mean difference at <em>X</em> = 0 (which is <code>g1a</code>, the group
 effect on the intercept) and <code>d_diff</code> as that difference
 divided by the square root of the total random intercept variance.</li>
 </ul>
-<div id="intensive-data-with-dropout-model-1" class="section level3">
-<h3>Intensive Data With Dropout (Model 1)</h3>
+<div id="intensive-data-with-dropout-model-1-in-table-4" class="section level4">
+<h4>Intensive Data With Dropout (Model 1 in Table 4)</h4>
 <p>The intensive model applied to the data with dropout.</p>
 <p><strong>Blimp script</strong></p>
 <pre><code>DATA: intensive-dropout.csv;             # raw data file
@@ -4732,8 +4580,9 @@ Level 2:
                                                                                                               
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="intensive-data-with-intermittent-missingness-model-1" class="section level3">
-<h3>Intensive Data With Intermittent Missingness (Model 1)</h3>
+<div id="intensive-data-with-intermittent-missingness-model-1-in-table-5" class="section level4">
+<h4>Intensive Data With Intermittent Missingness (Model 1 in Table
+5)</h4>
 <p>The same model applied to the intensive data with intermittent
 missingness.</p>
 <p><strong>Blimp script</strong></p>
@@ -5136,8 +4985,9 @@ Level 2:
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
 </div>
-<div id="model-implied-trajectories-figure-1" class="section level2">
-<h2>Model-Implied Trajectories (Figure 1)</h2>
+</div>
+<div id="figure-1-cmar-slopes" class="section level2">
+<h2>Figure 1: CMAR Slopes</h2>
 <p>Figure 1 in the paper shows the group-specific regression lines from
 the CMAR models: linear growth trajectories for the growth data (Panel
 A) and simple slopes of the outcome on the within-person covariate for
@@ -5360,8 +5210,8 @@ are needed.</p>
 </div>
 </div>
 </div>
-<div id="missing-data-indicators" class="section level1">
-<h1>Missing Data Indicators</h1>
+<div id="missing-data-patterns-and-missing-data-indicators" class="section level1">
+<h1>Missing Data Patterns and Missing Data Indicators</h1>
 <p>MNAR analyses require a secondary model with a level-1 binary missing
 data indicator <em>M</em> as the outcome of a probit regression. The
 coding of <em>M</em> depends on whether missing data patterns reflect
@@ -5391,8 +5241,8 @@ variables and the dropout indicator are correctly aligned even when the
 input data are not time-balanced.</p>
 <hr />
 </div>
-<div id="modeling-time-trends-in-missingness" class="section level1">
-<h1>Modeling Time Trends in Missingness</h1>
+<div id="modeling-time-trends-in-a-multilevel-missingness-model" class="section level1">
+<h1>Modeling Time Trends in a Multilevel Missingness Model</h1>
 <p>The validity of any MNAR model hinges on correctly specifying the
 missingness process. Although that assumption cannot be verified, the
 missingness model should at least reproduce the observed pattern of
@@ -5431,8 +5281,8 @@ fixed intercept, with a random intercept after the vertical pipe.</li>
 <li>The focal model is omitted, so <code>LATENT</code> and
 <code>FIXED</code> are not needed.</li>
 </ul>
-<div id="growth-data" class="section level3">
-<h3>Growth Data</h3>
+<div id="empty-random-intercept-model-growth-data" class="section level3">
+<h3>Empty Random Intercept Model: Growth Data</h3>
 <p>The empty model for the growth data with intermittent
 missingness.</p>
 <p><strong>Blimp script</strong></p>
@@ -5621,8 +5471,8 @@ Proportion Variance Explained
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="fu">icc_latent</span>(icc_gi)</span></code></pre></div>
 <pre><code>[1] 0.286</code></pre>
 </div>
-<div id="intensive-data" class="section level3">
-<h3>Intensive Data</h3>
+<div id="empty-random-intercept-model-intensive-data" class="section level3">
+<h3>Empty Random Intercept Model: Intensive Data</h3>
 <p>The empty model for the intensive data with intermittent
 missingness.</p>
 <p><strong>Blimp script</strong></p>
@@ -6917,8 +6767,9 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
 
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="observed-and-predicted-probabilities" class="section level4">
-<h4>Observed and Predicted Probabilities</h4>
+<div id="figure-3-observed-and-predicted-missing-data-rates-growth-data-panels-a-c-e-g" class="section level4">
+<h4>Figure 3: Observed and Predicted Missing Data Rates (Growth Data;
+Panels A, C, E, G)</h4>
 <p>The plots compare the observed occasion-specific missing data rates
 by group with the average individual predicted probabilities from each
 model (Figure 3, left column, in the paper).</p>
@@ -8450,8 +8301,9 @@ Level 2:
                                                                                                               
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="observed-and-predicted-probabilities-1" class="section level4">
-<h4>Observed and Predicted Probabilities</h4>
+<div id="figure-3-observed-and-predicted-missing-data-rates-intensive-data-panels-b-d-f-h" class="section level4">
+<h4>Figure 3: Observed and Predicted Missing Data Rates (Intensive Data;
+Panels B, D, F, H)</h4>
 <p>Figure 3, right column, in the paper.</p>
 <div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a>ymin <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb54-2"><a href="#cb54-2" tabindex="-1"></a>ymax <span class="ot">&lt;-</span> .<span class="dv">35</span></span>
@@ -9637,8 +9489,9 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
 
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="observed-and-predicted-probabilities-2" class="section level4">
-<h4>Observed and Predicted Probabilities</h4>
+<div id="figure-4-observed-and-predicted-dropout-rates-growth-data-panels-a-c-e-g" class="section level4">
+<h4>Figure 4: Observed and Predicted Dropout Rates (Growth Data; Panels
+A, C, E, G)</h4>
 <p>Figure 4, left column, in the paper. The rates are conditional
 dropout probabilities given participation at the prior occasion.</p>
 <div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" tabindex="-1"></a>ymin <span class="ot">&lt;-</span> <span class="dv">0</span></span>
@@ -11164,8 +11017,9 @@ Level 2:
                                                                                                               
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="observed-and-predicted-probabilities-3" class="section level4">
-<h4>Observed and Predicted Probabilities</h4>
+<div id="figure-4-observed-and-predicted-dropout-rates-intensive-data-panels-b-d-f-h" class="section level4">
+<h4>Figure 4: Observed and Predicted Dropout Rates (Intensive Data;
+Panels B, D, F, H)</h4>
 <p>Figure 4, right column, in the paper.</p>
 <div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" tabindex="-1"></a>ymin <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb76-2"><a href="#cb76-2" tabindex="-1"></a>ymax <span class="ot">&lt;-</span> .<span class="dv">5</span></span>
@@ -11259,8 +11113,8 @@ minimum, median, mean, and maximum occasion-specific discrepancy).</p>
 </div>
 </div>
 </div>
-<div id="shared-parameter-models" class="section level1">
-<h1>Shared Parameter Models</h1>
+<div id="multilevel-shared-parameter-models" class="section level1">
+<h1>Multilevel Shared Parameter Models</h1>
 <p>The defining feature of the Wu–Carroll (1988) shared parameter model
 is that the random effects of the focal model appear as predictors in
 the missingness model. Because the same latent variables drive both the
@@ -11268,8 +11122,8 @@ outcome and nonresponse, they induce an association between <em>Y</em>
 and <em>M</em>. Any random effect in the focal model can play this role,
 which makes the model readily applicable to intensive repeated measures
 data. All models continue to use dummy-coded time. Results for every
-model are collected in the <a href="#sensitivity-analysis-results">Sensitivity Analysis Results</a>
-section.</p>
+model are collected in the <a href="#analysis-examples">Analysis
+Examples</a> section.</p>
 <div id="growth-data-with-dropout" class="section level2">
 <h2>Growth Data With Dropout</h2>
 <p>With attrition, the first occasion is structurally complete. The SEM
@@ -18243,8 +18097,8 @@ Level 2:
 </div>
 </div>
 </div>
-<div id="selection-models" class="section level1">
-<h1>Selection Models</h1>
+<div id="multilevel-selection-models" class="section level1">
+<h1>Multilevel Selection Models</h1>
 <p>In the Diggle–Kenward (1994) selection model, occasion-specific
 realizations of the outcome, rather than stable levels or trends, drive
 nonresponse. The multilevel version requires a lagged outcome <span class="math inline">\(Y_{t-1}\)</span> that shifts each person’s scores
@@ -25654,8 +25508,9 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
 </div>
 </div>
 </div>
-<div id="combined-models" class="section level1">
-<h1>Combined Models</h1>
+<div id="combining-within--and-between-person-determinants-of-missingness" class="section level1">
+<h1>Combining Within- and Between-Person Determinants of
+Missingness</h1>
 <p>Detrending and centering isolate within-person deviations. A
 disaggregated missingness model includes both the within-person
 deviations and the between-person random effects, so that a person’s
@@ -25671,10 +25526,10 @@ demanding and almost certainly require large samples.</p>
 + \lambda_{t1}(O_{ti})(\mathit{GROUP}_i)\right] + \lambda_2(Y^{w}_{ti})
 + \lambda_3(Y^{w}_{t-1,i}) + \lambda_4(\alpha_i) + \lambda_5(\beta_i) +
 u_i + z_{ti}\]</span></p>
-<div id="growth-data-1" class="section level2">
-<h2>Growth Data</h2>
-<div id="model-8-disaggregated-model-dropout" class="section level3">
-<h3>Model 8: Disaggregated Model (Dropout)</h3>
+<div id="growth-data-with-dropout-2" class="section level2">
+<h2>Growth Data With Dropout</h2>
+<div id="model-8-disaggregated-model" class="section level3">
+<h3>Model 8: Disaggregated Model</h3>
 <p>Detrended outcome and lag plus the random intercept and slope, all
 switched on after baseline.</p>
 <p><em>Important features of the specification:</em></p>
@@ -26079,8 +25934,11 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
 
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="model-8-disaggregated-model-intermittent" class="section level3">
-<h3>Model 8: Disaggregated Model (Intermittent)</h3>
+</div>
+<div id="growth-data-with-intermittent-missingness-2" class="section level2">
+<h2>Growth Data With Intermittent Missingness</h2>
+<div id="model-8-disaggregated-model-1" class="section level3">
+<h3>Model 8: Disaggregated Model</h3>
 <p>The intermittent version with no switch.</p>
 <p><em>Important features of the specification:</em></p>
 <ul>
@@ -26487,10 +26345,10 @@ Parameters                         Estimate     StdDev       2.5%      97.5%    
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
 </div>
-<div id="intensive-data-1" class="section level2">
-<h2>Intensive Data</h2>
-<div id="model-10-disaggregated-model-dropout" class="section level3">
-<h3>Model 10: Disaggregated Model (Dropout)</h3>
+<div id="intensive-data-with-dropout-2" class="section level2">
+<h2>Intensive Data With Dropout</h2>
+<div id="model-10-disaggregated-model" class="section level3">
+<h3>Model 10: Disaggregated Model</h3>
 <p>Centered outcome and lag plus the random intercept and log-variance,
 switched on at occasion 7.</p>
 <p><em>Important features of the specification:</em></p>
@@ -27051,8 +26909,11 @@ Level 2:
                                                                                                               
                                 ------------------------------------------------------------------------------</code></pre>
 </div>
-<div id="model-10-disaggregated-model-intermittent" class="section level3">
-<h3>Model 10: Disaggregated Model (Intermittent)</h3>
+</div>
+<div id="intensive-data-with-intermittent-missingness-2" class="section level2">
+<h2>Intensive Data With Intermittent Missingness</h2>
+<div id="model-10-disaggregated-model-1" class="section level3">
+<h3>Model 10: Disaggregated Model</h3>
 <p>The intermittent version.</p>
 <p><strong>Blimp script</strong></p>
 <pre><code>DATA: intensive-intermittent.csv;                                           # raw data file
@@ -27611,8 +27472,8 @@ Level 2:
 </div>
 </div>
 </div>
-<div id="sensitivity-analysis-results" class="section level1">
-<h1>Sensitivity Analysis Results</h1>
+<div id="analysis-examples" class="section level1">
+<h1>Analysis Examples</h1>
 <p>This section collects the results of every model and reproduces
 Tables 2 through 5 of the paper, adding the full set of parameter
 estimates and the convergence diagnostics.</p>
@@ -27672,7 +27533,7 @@ and these were increased as needed, up to a cap of 200,000; models that
 reached the cap without adequate diagnostics, or with excessive <span class="math inline">\(R^2\)</span>, are treated as failed. The
 convergence tables below report the values used for the paper.</p>
 </div>
-<div id="growth-data-with-dropout-2" class="section level2">
+<div id="growth-data-with-dropout-3" class="section level2">
 <h2>Growth Data With Dropout</h2>
 <p>The tables below correspond to Table 2 in the paper and add every
 model parameter.</p>
@@ -28288,7 +28149,7 @@ failed.</p>
 </table>
 </div>
 </div>
-<div id="growth-data-with-intermittent-missingness-2" class="section level2">
+<div id="growth-data-with-intermittent-missingness-3" class="section level2">
 <h2>Growth Data With Intermittent Missingness</h2>
 <p>The tables below correspond to Table 3 in the paper and add every
 model parameter.</p>
@@ -28904,7 +28765,7 @@ failed.</p>
 </table>
 </div>
 </div>
-<div id="intensive-data-with-dropout-2" class="section level2">
+<div id="intensive-data-with-dropout-3" class="section level2">
 <h2>Intensive Data With Dropout</h2>
 <p>The tables below correspond to Table 4 in the paper and add every
 model parameter.</p>
@@ -29784,7 +29645,7 @@ failed.</p>
 </table>
 </div>
 </div>
-<div id="intensive-data-with-intermittent-missingness-2" class="section level2">
+<div id="intensive-data-with-intermittent-missingness-3" class="section level2">
 <h2>Intensive Data With Intermittent Missingness</h2>
 <p>The tables below correspond to Table 5 in the paper and add every
 model parameter.</p>
@@ -30743,7 +30604,7 @@ $(document).ready(function ()  {
 
     // establish options
     var options = {
-      selectors: "h1,h2,h3",
+      selectors: "h1,h2,h3,h4",
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {

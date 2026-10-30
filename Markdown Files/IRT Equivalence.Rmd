@@ -2,7 +2,6 @@
 title: "Dummy-Coded Missingness Models and Their IRT Equivalents"
 author: "Craig Enders"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
-knit: (function(input, ...) rmarkdown::render(input, output_dir = "../docs", envir = globalenv()))
 output:
   html_document:
     toc: true
@@ -59,7 +58,7 @@ This document accompanies "Missing not at Random Analyses for Multilevel
 Data" and describes the equivalence between the dummy-coded missingness
 models used in the paper and the item response theory (IRT) missingness
 models of Cursio et al. (2019). The GitHub repository at
-[https://github.com/blimp-stats/mnar-mlm](https://github.com/blimp-stats/mnar-mlm)
+[https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)
 includes the paper, the example data sets, and the `rblimp` script
 (`rblimp/irt-missingness-models.R`) that fits the models shown here.
 
@@ -246,7 +245,7 @@ library(rblimp)
 ```
 
 ```{r load-data}
-filepath <- 'https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/data/intensive-intermittent.csv'
+filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/data/intensive-intermittent.csv'
 
 intensive_intermittent <- read.csv(filepath, stringsAsFactors = T)
 ```
