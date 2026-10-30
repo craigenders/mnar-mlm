@@ -45,9 +45,7 @@ options(scipen = 999)
 
 This tutorial accompanies "Missing Not at Random Models for Multilevel Analyses." The paper describes how to specify shared parameter and selection models for multilevel analyses of longitudinal change and intensive longitudinal data, and this document walks through every analysis in the paper with executable `rblimp` code, the equivalent Blimp script, and annotated output. The two documents are meant to be read together: the paper explains the models, and this tutorial explains the syntax. Section headings here follow the paper, so a reader can move from a paper section to the matching code.
 
-The GitHub repository at [https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm) includes a PDF of the paper, the four example data sets, the executable R scripts, this tutorial, and a companion document on the equivalence between dummy-coded missingness models and item response theory (IRT) missingness models.
-
-**Software.** All analyses use Blimp (the computational engine) through the rblimp R package, so both must be installed before any code here will run. Blimp is a free download for macOS, Windows, and Linux from [https://www.appliedmissingdata.com/blimp](https://www.appliedmissingdata.com/blimp); rblimp is on CRAN (`install.packages("rblimp")`) and requires Blimp to be installed first. Two short documents in the repository cover the setup: the [Blimp Installation Guide](Blimp%20Installation%20Guide.html) walks through installing Blimp, Blimp Studio, and rblimp on each platform, and the [Blimp Scripting Quick Start](Blimp%20Scripting%20Quick%20Start.html) introduces the scripting language and the correspondence between Blimp commands and `rblimp()` arguments. Readers new to Blimp should skim both before the [Blimp and rblimp](#blimp-and-rblimp) section below, which explains the specific commands this tutorial uses.
+The GitHub repository at [https://github.com/blimp-stats/mnar-mlm](https://github.com/blimp-stats/mnar-mlm) includes a PDF of the paper, the four example data sets, the executable R scripts, this tutorial, and a companion document on the equivalence between dummy-coded missingness models and item response theory (IRT) missingness models.
 
 | Paper section | Tutorial section |
 |:--|:--|
@@ -173,10 +171,15 @@ library(patchwork)
 library(rblimp)
 ```
 
+```{r blimp-path, include=FALSE}
+# local Blimp build used for the knit; not shown in the rendered document
+set_blimp('/applications/blimp/blimp-nightly')
+```
+
 ## Read Data
 
 ```{r load-data}
-github <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/'
+github <- 'https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/'
 
 growth_dropout         <- read.csv(paste0(github, 'growth-dropout.csv'),         stringsAsFactors = T)
 growth_intermittent    <- read.csv(paste0(github, 'growth-intermittent.csv'),    stringsAsFactors = T)
@@ -188,7 +191,7 @@ intensive_intermittent <- read.csv(paste0(github, 'intensive-intermittent.csv'),
 
 ```{r source-functions}
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
-source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
+source('https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/mnar-plotting.R')
 ```
 
 The second file defines `plot_means()`, which draws averages of any variable in an `rblimp` model's imputed data by occasion and, optionally, by group. It is used throughout the tutorial for the missingness-probability figures and for the model-implied growth curves.

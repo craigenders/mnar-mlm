@@ -58,9 +58,9 @@ This document accompanies "Missing not at Random Analyses for Multilevel
 Data" and describes the equivalence between the dummy-coded missingness
 models used in the paper and the item response theory (IRT) missingness
 models of Cursio et al. (2019). The GitHub repository at
-[https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)
+[https://github.com/blimp-stats/mnar-mlm](https://github.com/blimp-stats/mnar-mlm)
 includes the paper, the example data sets, and the `rblimp` script
-(`5. IRT Missingness Models.R`) that fits the models shown here.
+(`rblimp/irt-missingness-models.R`) that fits the models shown here.
 
 Dummy coding is equivalent to the one- and two-parameter IRT missingness
 models in Cursio et al. (2019). Their framework uses a standardized
@@ -245,7 +245,7 @@ library(rblimp)
 ```
 
 ```{r load-data}
-filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-intermittent.csv'
+filepath <- 'https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/data/intensive-intermittent.csv'
 
 intensive_intermittent <- read.csv(filepath, stringsAsFactors = T)
 ```

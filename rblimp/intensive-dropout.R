@@ -14,14 +14,16 @@ library(rblimp)
 #------------------------------------------------------------------------------#
 
 # github url for raw data
-filepath1 <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/growth-dropout.csv'
+filepath <- 'https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/data/intensive-dropout.csv'
 
 # create data frame from github data
-growth_dropout <- read.csv(filepath1, stringsAsFactors = T)
+intensive_dropout <- read.csv(filepath, stringsAsFactors = T)
+
+
 
 # plotting functions
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
-source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
+source('https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/rblimp/mnar-plotting.R')
 
 #------------------------------------------------------------------------------#
 # CMAR ----
@@ -29,22 +31,25 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 
 # MODEL 1: CMAR ----
 model1 <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',   # restricts the CMAR analysis to the same rows as the MNAR models
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;',
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   burn = 25000,
   iter = 25000)
@@ -53,78 +58,89 @@ model1 <- rblimp(
 output(model1)
 
 #------------------------------------------------------------------------------#
-# TIME-RELATED CHANGES ----
+# TIME-RELATED CHANGES (INTENSIVE MEASUREMENTS) ----
 #------------------------------------------------------------------------------#
 
 # MISSINGNESS PROBS: Linear Time ----
 time_linear <- rblimp(
-  data = growth_dropout,
-  clusterid = 'l2id',
+  data = intensive_dropout,
+  clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'time group',
+  center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    m ~ intercept@-3 time@b1 time*group@b2 | intercept@0;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 d group*d (time - 7)*d (time - 7)*group*d | intercept@0;',
   seed = 90291,
   burn = 25000,
-  iter = 25000)
+  iter = 25000,
+  nimps = 20)
 
 # print output
 output(time_linear)
 
 # MISSINGNESS PROBS: Quadratic Time ----
 time_quadratic <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'time group',
+  center = 'groupmean = x',
   model = '
     level2:
-    alpha ~ intercept group;
-    beta ~ intercept group;
-    alpha ~~ beta;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    m ~ intercept@-3 time time^2 time*group time^2*group | intercept@0;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 d group*d (time - 7)*d (time - 7)^2*d (time - 7)*group*d (time - 7)^2*group*d | intercept@0;',
   seed = 90291,
   burn = 25000,
-  iter = 25000)
+  iter = 25000,
+  nimps = 20)
 
 # print output
 output(time_quadratic)
 
 # MISSINGNESS PROBS: Dummy-Coded Time ----
 time_dummy <- rblimp(
-  data = growth_dropout,
-  clusterid = 'l2id',
+  data = intensive_dropout,
+  clusterid = 'l2id', 
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'time group',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
+    d = ifelse(time < 7, 0, 1);
     m ~ intercept@-3 | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   seed = 90291,
   burn = 25000,
   iter = 25000)
@@ -133,10 +149,10 @@ time_dummy <- rblimp(
 output(time_dummy)
 
 #------------------------------------------------------------------------------#
-# PLOT MISSINGNESS PROBABILITIES ----
+# PLOT MISSINGNESS PROBABILITIES (INTENSIVE) ----
 #------------------------------------------------------------------------------#
 
-ymax <- .5
+ymax <- .15
 ymin <- 0
 
 # plot observed probabilities
@@ -218,184 +234,199 @@ miss_fit <- data.frame(
 miss_fit
 
 #------------------------------------------------------------------------------#
-# SHARED PARAMETER MODEL ----
+# SHARED PARAMETER ----
 #------------------------------------------------------------------------------#
 
 # MODEL 2: Shared Parameter Model ----
 model2 <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha*d beta*d | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 alpha*d omega*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  burn = 25000,
-  iter = 25000)
+  burn = 75000,
+  iter = 75000)
 
 # print output
 output(model2)
 
 # MODEL 3: Quadratic Shared Parameter Model ----
 model3 <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha*d alpha*d^2 beta*d beta*d^2 | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 alpha*d omega*d alpha^2*d omega^2*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  burn = 25000,
-  iter = 25000)
+  burn = 200000,
+  iter = 200000)
 
 # print output
 output(model3)
 
 # MODEL 4: Residual Shared Parameter Model ----
 model4 <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
+    d = ifelse(time < 7, 0, 1);
     alpha_res = alpha - (g0a + g1a*group);
-    beta_res = beta - (g0b + g1b*group);
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 alpha_res*d beta_res*d | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+    m ~ intercept@-3 d*alpha_res d*omega | intercept@0;
+    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
-  seed = 90291,
-  burn = 100000,
-  iter = 100000)
-
-# print output
-output(model4)
-
-#------------------------------------------------------------------------------#
-# SELECTION MODEL ----
-#------------------------------------------------------------------------------#
-
-# MODEL 5: Diggle-Kenward Selection Model ----
-model5 <- rblimp(
-  data = growth_dropout,
-  clusterid = 'l2id',
-  timeid = 'time',
-    dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
-  fixed = 'group time',
-  model = '
-    level2:
-    alpha ~ intercept@g0a group@g1a;
-    beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
-    level1:
-    y ~ intercept@alpha time@beta;
-    missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 y*d y.lag*d | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
-  parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   burn = 25000,
   iter = 25000)
 
 # print output
-output(model5)
+output(model4)
 
-# MODEL 6: Quadratic Diggle-Kenward Model ----
-model6 <- rblimp(
-  data = growth_dropout,
+# MODEL 5: Shared Parameter Model With Covariate Latent Means ----
+model5 <- rblimp(
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    m ~ intercept@-3 y*d y^2*d y.lag*d | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 d*alpha d*omega d*x.mean | intercept@0;
+    { t in 1:19 } : m ~ d*(time == [t]) d*(time == [t])*group;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  burn = 50000,
-  iter = 50000)
+  burn = 200000,
+  iter = 200000)
+
+# print output
+output(model5)
+
+#------------------------------------------------------------------------------#
+# DIGGLE-KENWARD MODEL ----
+#------------------------------------------------------------------------------#
+
+# MODEL 6: Diggle-Kenward Selection Model ----
+model6 <- rblimp(
+  data = intensive_dropout,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 y*d y.lag*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
+  parameters = '
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  burn = 25000,
+  iter = 25000)
 
 # print output
 output(model6)
 
-# MODEL 7: Residual Diggle-Kenward Model ----
+# MODEL 7: Quadratic Diggle-Kenward Model ----
 model7 <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    yw = y - (alpha + beta*time);
-    lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 yw*d lagyw*d | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 y*d y^2*d y.lag*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
   burn = 200000,
   iter = 200000)
@@ -403,47 +434,113 @@ model7 <- rblimp(
 # print output
 output(model7)
 
-#------------------------------------------------------------------------------#
-# DISAGGREGATED MODEL ----
-#------------------------------------------------------------------------------#
-
-# MODEL 8: Disaggregated Model ----
+# MODEL 8: Residual Diggle-Kenward Model ----
 model8 <- rblimp(
-  data = growth_dropout,
+  data = intensive_dropout,
   clusterid = 'l2id',
   timeid = 'time',
   dropout = 'm = y (monotone)',
-  latent = 'l2id = alpha beta',
+  latent = 'l2id = alpha beta omega',
   fixed = 'group time',
+  center = 'groupmean = x',
   model = '
     level2:
     alpha ~ intercept@g0a group@g1a;
     beta ~ intercept@g0b group@g1b;
-    alpha ~~ beta;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
     level1:
-    y ~ intercept@alpha time@beta;
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
     missingness:
-    d = ifelse(time < 1, 0, 1);
-    yw = y - (alpha + beta*time);
-    lagyw = y.lag - (alpha + beta*(time - 1));
-    m ~ intercept@-3 yw*d lagyw*d alpha*d beta*d | intercept@0;
-    { t in 1:4 } : m ~ (time == [t]) (time == [t])*group;',
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
   parameters = '
-    diff = (((g0a+g1a)  + 4*(g0b+g1b)) - (g0a + 4*g0b)); 
-    d_diff = diff / sqrt(y.totalvar + alpha.totalvar);',
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  burn = 100000,
-  iter = 100000)
+  burn = 75000,
+  iter = 75000)
 
 # print output
 output(model8)
+
+# MODEL 9: Diggle-Kenward Model With Covariate and its Lag ----
+model9 <- rblimp(
+  data = intensive_dropout,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
+  latent = 'l2id = alpha beta omega xmeans',
+  fixed = 'group time',
+  model = '
+    level2:
+    xmeans ~ intercept;
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    x ~ intercept@xmeans;
+    y ~ intercept@alpha (x - xmeans)@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 y*d y.lag*d x*d x.lag*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
+  parameters = '
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  burn = 25000,
+  iter = 25000)
+
+# print output
+output(model9)
+
+#------------------------------------------------------------------------------#
+# DISAGGREGATED MODEL ----
+#------------------------------------------------------------------------------#
+
+# MODEL 10: Disaggregated Model ----
+model10 <- rblimp(
+  data = intensive_dropout,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (monotone)',
+  latent = 'l2id = alpha beta omega',
+  fixed = 'group time',
+  center = 'groupmean = x',
+  model = '
+    level2:
+    alpha ~ intercept@g0a group@g1a;
+    beta ~ intercept@g0b group@g1b;
+    omega ~ intercept@g0o;
+    alpha beta omega ~~ alpha beta omega;
+    level1:
+    y ~ intercept@alpha x@beta;
+    var(y) ~ intercept@omega;
+    missingness:
+    d = ifelse(time < 7, 0, 1);
+    m ~ intercept@-3 (y - alpha)*d (y.lag - alpha)*d alpha*d omega*d | intercept@0;
+    { t in 1:19 } : m ~ (time == [t])*d (time == [t])*group*d;',
+  parameters = '
+    diff = g1a; 
+    d_diff = diff / sqrt(alpha.totalvar);',
+  seed = 90291,
+  burn = 200000,
+  iter = 200000)
+
+# print output
+output(model10)
 
 #------------------------------------------------------------------------------#
 # EXTRACT ESTIMATES ----
 #------------------------------------------------------------------------------#
 
 # function to extract key estimates
-extract_growth_params <- function(object, method) {
+extract_intensive_params <- function(object, method) {
   
   tab <- object@estimates
   
@@ -455,7 +552,11 @@ extract_growth_params <- function(object, method) {
     "alpha residual variance",
     "beta residual variance",
     "Cor( alpha, beta )",
-    "y residual variance",
+    "y Variance Q50%",
+    "omega ~ Intercept",
+    "omega residual variance",
+    "Cor( alpha, omega )",
+    "Cor( beta, omega )",
     "Parameter: diff",
     "Parameter: d_diff",
     "m R2: Coefficients"
@@ -478,6 +579,10 @@ extract_growth_params <- function(object, method) {
     "Var(Slope)",
     "Cor(Icept, Slope)",
     "Var(Residual)",
+    "Icept Log-Var",
+    "Var(Log-Var)",
+    "Cor(Icept, Log-Var)",
+    "Cor(Log-Var, Slope)",
     "Mean Diff.",
     "Std. Diff.",
     "Pseudo-Rsq"
@@ -500,7 +605,9 @@ table_summary <- cbind(
   extract_growth_params(model5, "Mod5"),
   extract_growth_params(model6, "Mod6"),
   extract_growth_params(model7, "Mod7"),
-  extract_growth_params(model8, "Mod8")
+  extract_growth_params(model8, "Mod8"),
+  extract_growth_params(model9, "Mod9"),
+  extract_growth_params(model10, "Mod10")
 )
 table_summary
 
@@ -511,8 +618,8 @@ mean_row <- table_summary["Mean Diff.", ]
 std_row  <- table_summary["Std. Diff.", ]
 
 # method names
-methods_short <- paste0("Mod", 1:8)
-methods_long  <- paste0("Model ", 1:8)
+methods_short <- paste0("Mod", 1:10)
+methods_long  <- paste0("Model ", 1:10)
 
 # build table
 table_diff <- do.call(rbind, lapply(seq_along(methods_short), function(i) {
@@ -531,6 +638,7 @@ table_diff <- as.data.frame(table_diff)
 table_diff
 
 # changes in SE units ----
+
 est_cmar <- table_summary[, 1]
 se_cmar  <- table_summary[, 2]
 
@@ -572,7 +680,9 @@ table_diag <- rbind(
   extract_convergence(model5, "Model 5"),
   extract_convergence(model6, "Model 6"),
   extract_convergence(model7, "Model 7"),
-  extract_convergence(model8, "Model 8")
+  extract_convergence(model8, "Model 8"),
+  extract_convergence(model9, "Model 9"),
+  extract_convergence(model10, "Model 10") 
 )
 
 # add number of iterations
@@ -584,7 +694,10 @@ table_diag$Iterations <- c(
   nrow(model5@iterations),
   nrow(model6@iterations),
   nrow(model7@iterations),
-  nrow(model8@iterations)
+  nrow(model8@iterations),
+  nrow(model9@iterations),
+  nrow(model10@iterations)
 )
 table_diag
+
 

@@ -59,7 +59,7 @@ data analysis results reported in "Missing not at Random Analyses for
 Multilevel Data." The OSF repository at
 [https://osf.io/yegcf/](https://osf.io/yegcf/) includes the paper and
 supporting documents, and the GitHub repository at
-[https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)
+[https://github.com/blimp-stats/mnar-mlm](https://github.com/blimp-stats/mnar-mlm)
 includes executable R and Blimp Studio scripts for all examples.
 
 The model numbers used throughout this supplement correspond to the models displayed in Tables 2 through 5 in the paper. The ten sensitivity models analyzed in this supplement are:
@@ -84,7 +84,7 @@ The model numbers used throughout this supplement correspond to the models displ
 The table below summarizes the major `rblimp` function arguments used
 throughout this supplement. Each argument corresponds to a command in
 the Blimp Studio scripts provided on the project's public GitHub site
-([https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)).
+([https://github.com/blimp-stats/mnar-mlm](https://github.com/blimp-stats/mnar-mlm)).
 Readers unfamiliar with `rblimp` may find it helpful to use this table
 as a reference while working through the analysis examples.
 
@@ -246,7 +246,7 @@ library(rblimp)
 ### Read Data
 
 ```{r load-data}
-filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-dropout.csv'
+filepath <- 'https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/intensive-dropout.csv'
 
 intensive_dropout <- read.csv(filepath, stringsAsFactors = T)
 ```
@@ -255,7 +255,7 @@ intensive_dropout <- read.csv(filepath, stringsAsFactors = T)
 
 ```{r source-functions}
 source('https://raw.githubusercontent.com/blimp-stats/blimp-book/main/misc/functions.R')
-source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plotting.R')
+source('https://raw.githubusercontent.com/blimp-stats/mnar-mlm/main/mnar-plotting.R')
 ```
 
 ### Helper Functions
