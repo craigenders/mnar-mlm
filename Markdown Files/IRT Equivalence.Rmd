@@ -1,0 +1,395 @@
+---
+title: "Dummy-Coded Missingness Models and Their IRT Equivalents"
+author: "Craig Enders"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 3
+    theme: cosmo
+    highlight: haddock
+    code_folding: show
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: '4'
+editor_options:
+  chunk_output_type: console
+  markdown:
+    wrap: 72
+---
+
+```{css, echo=FALSE}
+body {
+  font-size: 18px;
+}
+pre {
+  font-size: 15.6px;
+  white-space: pre;
+  overflow-x: visible;
+}
+pre code {
+  white-space: pre;
+  word-wrap: normal;
+}
+.main-container {
+  max-width: 1500px !important;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  comment = "",
+  fig.width = 10,
+  fig.height = 6)
+
+options(scipen = 999)
+```
+
+# Overview
+
+This document accompanies "Missing not at Random Analyses for Multilevel
+Data" and describes the equivalence between the dummy-coded missingness
+models used in the paper and the item response theory (IRT) missingness
+models of Cursio et al. (2019). The GitHub repository at
+[https://github.com/craigenders/mnar-mlm](https://github.com/craigenders/mnar-mlm)
+includes the paper, the example data sets, and the `rblimp` script
+(`5. IRT Missingness Models.R`) that fits the models shown here.
+
+Dummy coding is equivalent to the one- and two-parameter IRT missingness
+models in Cursio et al. (2019). Their framework uses a standardized
+latent variable to represent person-level missingness propensity and a
+measurement model with the *T* binary missing data indicators as the
+"items." After removing all group effects, the dummy-coded model is
+fully equivalent to a one-parameter IRT model. With group effects
+included, the dummy-coded model is analogous to a multiple-group IRT
+model that imposes metric invariance (common factor loadings or
+discrimination parameters) while allowing scalar noninvariance
+(group-specific intercepts or difficulty parameters). In the
+two-parameter model of Cursio et al. (2019), the measurement model
+includes occasion-specific loadings and intercepts (discrimination and
+difficulty parameters, respectively). The equivalent multilevel
+specification includes cross-level interactions between the latent
+missingness propensity and the dummy codes, allowing a person's
+propensity to have occasion-specific effects.
+
+The sections below give the algebraic relationships between the two
+frameworks, then fit each model to the intensive longitudinal data set
+with intermittent missingness (*T* = 20 occasions, *N* = 125) and
+compare the `rblimp` output.
+
+------------------------------------------------------------------------
+
+# Algebraic Relationships
+
+## Notation
+
+Let $m_{ti}$ be the binary missing data indicator for person $i$ at
+occasion $t$ ($t = 0, \ldots, T-1$), equal to 1 if the outcome is
+missing and 0 otherwise. Blimp estimates binary outcome models on the
+latent response metric, so each model below is written for the latent
+response variable $m^*_{ti}$ with a standard normal residual (a probit
+link):
+
+$$
+m_{ti} = \begin{cases} 1 & \text{if } m^*_{ti} > 0 \\ 0 & \text{if } m^*_{ti} \le 0 \end{cases}
+\qquad \epsilon_{ti} \sim N(0, 1).
+$$
+
+The equivalences hold for any link function; only the metric of the
+coefficients changes. Let $D_{ti}$ denote the dummy code for occasion
+$t$ (equal to 1 if the observation is from occasion $t$ and 0
+otherwise), with occasion 0 serving as the reference.
+
+## Dummy-Coded Missingness Model
+
+The dummy-coded missingness model from the paper, with group effects
+removed, is a random intercept model with occasion-specific fixed
+effects:
+
+$$
+m^*_{ti} = \gamma_0 + \sum_{t=1}^{T-1} \gamma_t D_{ti} + u_i + \epsilon_{ti},
+\qquad u_i \sim N(0, \tau^2).
+\tag{1}
+$$
+
+Because exactly one dummy code is nonzero at each occasion, the model
+reduces to a separate intercept for each occasion plus a common random
+effect:
+
+$$
+m^*_{ti} = \underbrace{(\gamma_0 + \gamma_t)}_{\text{occasion } t \text{ intercept}} + u_i + \epsilon_{ti},
+$$
+
+with $\gamma_0$ alone at the reference occasion. The random intercept
+$u_i$ is the person-level missingness propensity, and its variance
+$\tau^2$ captures stable between-person differences in the tendency to
+have missing data. The model has $T$ fixed intercepts and one variance,
+for $T + 1$ free parameters.
+
+## One-Parameter IRT Model
+
+The one-parameter (1PL) IRT missingness model treats the $T$ indicators
+as items measuring a standardized latent propensity $\eta_i$:
+
+$$
+m^*_{ti} = \nu_t + \lambda \, \eta_i + \epsilon_{ti},
+\qquad \eta_i \sim N(0, 1).
+\tag{2}
+$$
+
+Each item has its own intercept $\nu_t$ (the difficulty parameter,
+possibly with a sign change depending on the parameterization), and all
+items share a common loading $\lambda$ (the discrimination parameter).
+The model has $T$ intercepts and one loading, for $T + 1$ free
+parameters.
+
+Equations 1 and 2 are the same model. Writing the random intercept as a
+scaled standard normal variable, $u_i = \tau \eta_i$, gives the mapping:
+
+| Dummy-Coded Model (Eq. 1) | 1PL IRT Model (Eq. 2) | Relationship |
+|:--------------------------|:----------------------|:-------------|
+| Reference intercept $\gamma_0$ | Item intercept $\nu_0$ | $\nu_0 = \gamma_0$ |
+| Dummy code coefficient $\gamma_t$ | Item intercept $\nu_t$ | $\nu_t = \gamma_0 + \gamma_t$ |
+| Random intercept variance $\tau^2$ | Common loading $\lambda$ | $\lambda = \tau$, i.e., $\lambda^2 = \tau^2$ |
+| Random intercept $u_i$ | Latent propensity $\eta_i$ | $\eta_i = u_i / \tau$ |
+
+The only difference is where the scale of the latent variable lives: the
+dummy-coded model fixes the loading to 1 and estimates the variance,
+whereas the IRT model fixes the variance to 1 and estimates the loading.
+Both choices identify the same model, and the fit statistics are
+identical.
+
+## Multiple-Group Extension
+
+Adding a binary grouping variable $G_i$ and its interactions with the
+dummy codes to Equation 1 gives the dummy-coded model with group
+effects:
+
+$$
+m^*_{ti} = \gamma_0 + \gamma_G G_i + \sum_{t=1}^{T-1} \gamma_t D_{ti}
+ + \sum_{t=1}^{T-1} \gamma_{tG} D_{ti} G_i + u_i + \epsilon_{ti},
+\qquad u_i \sim N(0, \tau^2).
+\tag{3}
+$$
+
+In IRT terms, this is a two-group measurement model in which the item
+intercepts differ by group,
+
+$$
+\nu_t^{(0)} = \gamma_0 + \gamma_t, \qquad
+\nu_t^{(1)} = (\gamma_0 + \gamma_G) + (\gamma_t + \gamma_{tG}),
+$$
+
+but the loading $\lambda = \tau$ is common to both groups because the
+random intercept variance is the same in both groups. That combination
+is metric invariance (equal discriminations) with scalar noninvariance
+(group-specific difficulties). Allowing $\tau^2$ to differ by group
+would relax metric invariance.
+
+## Two-Parameter IRT Model
+
+The two-parameter (2PL) IRT missingness model adds occasion-specific
+loadings:
+
+$$
+m^*_{ti} = \nu_t + \lambda_t \, \eta_i + \epsilon_{ti},
+\qquad \eta_i \sim N(0, 1).
+\tag{4}
+$$
+
+Each occasion now has its own discrimination $\lambda_t$, so a person's
+missingness propensity can have a stronger or weaker effect at some
+occasions than at others. The model has $T$ intercepts and $T$
+loadings, for $2T$ free parameters.
+
+The equivalent multilevel specification adds cross-level interactions
+between the latent propensity and the dummy codes:
+
+$$
+m^*_{ti} = \gamma_0 + \sum_{t=1}^{T-1} \gamma_t D_{ti}
+ + \lambda_0 \, \eta_i + \sum_{t=1}^{T-1} \delta_t D_{ti} \, \eta_i + \epsilon_{ti},
+\qquad \eta_i \sim N(0, 1).
+\tag{5}
+$$
+
+The main effect $\lambda_0$ is the loading at the reference occasion,
+and each interaction coefficient $\delta_t$ is the change in the loading
+at occasion $t$:
+
+| Multilevel Specification (Eq. 5) | 2PL IRT Model (Eq. 4) | Relationship |
+|:---------------------------------|:----------------------|:-------------|
+| Reference intercept $\gamma_0$ | Item intercept $\nu_0$ | $\nu_0 = \gamma_0$ |
+| Dummy code coefficient $\gamma_t$ | Item intercept $\nu_t$ | $\nu_t = \gamma_0 + \gamma_t$ |
+| Main effect of $\eta_i$, $\lambda_0$ | Loading $\lambda_0$ | $\lambda_0 = \lambda_0$ |
+| Cross-level interaction $\delta_t$ | Loading $\lambda_t$ | $\lambda_t = \lambda_0 + \delta_t$ |
+
+The 1PL model is nested within the 2PL model: setting every $\delta_t$
+to 0 in Equation 5 recovers Equation 2. Comparing the two models
+therefore tests whether occasion-specific discriminations are needed.
+
+------------------------------------------------------------------------
+
+# rblimp Analyses
+
+## Setup
+
+```{r packages}
+library(rblimp)
+```
+
+```{r load-data}
+filepath <- 'https://raw.githubusercontent.com/craigenders/mnar-mlm/main/intensive-intermittent.csv'
+
+intensive_intermittent <- read.csv(filepath, stringsAsFactors = T)
+```
+
+Only the missingness model is specified in each analysis; there is no
+focal model. Group effects are omitted so that the dummy-coded model is
+fully equivalent to the 1PL model. The `dropout` argument with the
+`(missing)` keyword creates the missingness indicator `m`, and
+`timeid` identifies the occasion variable. Because `time` is coded 0 to
+19, the looping structure `{ t in 1:19 }` generates the dummy codes for
+occasions 1 through 19, with occasion 0 as the reference.
+
+## Model A: Dummy-Coded Missingness Model
+
+Model A is the dummy-coded missingness model in Equation 1. The random
+intercept after the vertical pipe is the person-level missingness
+propensity $u_i$.
+
+*Important features of the missingness model:*
+
+- Boolean statements create dummy codes as functions of the TIME
+  variable, such that each condition in parentheses returns 1 if
+  TIME = `t` and 0 otherwise.
+- A looping structure avoids specifying a separate Boolean statement
+  for each occasion.
+- The random intercept after the vertical pipe is Blimp's default for a
+  multilevel model and could be omitted; it is shown explicitly here
+  because the IRT models below fix it to zero.
+
+```{r model-dummy, cache=TRUE}
+model_dummy <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  fixed = 'time',
+  model = '
+    m ~ intercept | intercept;
+    { t in 1:19 } : m ~ (time == [t]);',
+  seed = 90291,
+  burn = 25000,
+  iter = 25000)
+
+output(model_dummy)
+```
+
+## Model B: One-Parameter IRT Model
+
+Model B is the 1PL model in Equation 2. A standardized latent variable
+`u` replaces the random intercept, a single common loading on `u` is
+estimated, and the occasion dummy codes give the item intercepts.
+
+*Important features of the missingness model:*
+
+- The `latent` argument declares `u` as a level-2 latent variable.
+- The structural model fixes the latent variable's mean to 0
+  (`u ~ intercept@0`) and its variance to 1 (`u ~~ u@1`).
+- The common loading is the coefficient for `u` in the measurement
+  model.
+- The default random intercept for `m` is fixed to 0 (`| intercept@0`)
+  because `u` is the only source of between-person variation.
+
+```{r model-1pl, cache=TRUE}
+model_1pl <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = u',
+  fixed = 'time',
+  model = '
+    structural:
+    u ~ intercept@0;
+    u ~~ u@1;
+    measurement:
+    m ~ intercept u | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]);',
+  seed = 90291,
+  burn = 25000,
+  iter = 25000)
+
+output(model_1pl)
+```
+
+## Model C: Two-Parameter IRT Model
+
+Model C is the 2PL model in Equation 5. The main effect of `u` is the
+loading at occasion 0, and the cross-level interactions between `u` and
+the dummy codes give the change in the loading at each subsequent
+occasion.
+
+*Important features of the missingness model:*
+
+- The structural model fixes the latent variable's mean to 0 and its
+  variance to 1, as in Model B.
+- The looping structure adds both the dummy code and its product with
+  `u` at each occasion; the product terms are the cross-level
+  interactions in Equation 5.
+
+```{r model-2pl, cache=TRUE}
+model_2pl <- rblimp(
+  data = intensive_intermittent,
+  clusterid = 'l2id',
+  timeid = 'time',
+  dropout = 'm = y (missing)',
+  latent = 'l2id = u',
+  fixed = 'time',
+  model = '
+    structural:
+    u ~ intercept@0;
+    u ~~ u@1;
+    measurement:
+    m ~ intercept u | intercept@0;
+    { t in 1:19 } : m ~ (time == [t]) (time == [t])*u;',
+  seed = 90291,
+  burn = 50000,
+  iter = 50000)
+
+output(model_2pl)
+```
+
+------------------------------------------------------------------------
+
+# Comparing the Models
+
+## Models A and B
+
+<!-- TODO: paste output excerpts from Models A and B side by side.
+     Points to make: the occasion intercepts are identical; the random
+     intercept variance in Model A equals the squared loading on u in
+     Model B; DIC and WAIC are identical within MCMC error. -->
+
+## Models B and C
+
+<!-- TODO: paste output excerpts from Models B and C. Points to make:
+     the occasion intercepts are comparable; the loading at occasion t in
+     Model C is the main effect of u plus the interaction coefficient;
+     DIC and WAIC indicate whether occasion-specific loadings improve
+     fit. -->
+
+------------------------------------------------------------------------
+
+# References
+
+Cursio, J. F., Mermelstein, R. J., & Hedeker, D. (2019). Latent trait
+shared-parameter mixed models for missing ecological momentary
+assessment data. *Statistics in Medicine, 38*(4), 660--673.

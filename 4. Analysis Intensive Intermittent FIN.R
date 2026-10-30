@@ -31,6 +31,8 @@ source('https://raw.githubusercontent.com/craigenders/mnar-mlm/main/mnar-plottin
 model1 <- rblimp(
   data = intensive_intermittent,
   clusterid = 'l2id', 
+  timeid = 'time',
+  dropout = 'm = y (missing)',   # restricts the CMAR analysis to the same rows as the MNAR models
   latent = 'l2id = alpha beta omega',
   fixed = 'group time',
   center = 'groupmean = x',
@@ -47,7 +49,6 @@ model1 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -66,7 +67,6 @@ icc_missingness <- rblimp(
   dropout = 'm = y (missing)',
   model = 'm ~ intercept | intercept;',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -98,7 +98,6 @@ time_linear <- rblimp(
     missingness:
     m ~ intercept time group time*group | intercept;',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -126,7 +125,6 @@ time_quadratic <- rblimp(
     missingness:
     m ~ intercept time time^2 group time*group time^2*group | intercept;',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -158,7 +156,6 @@ time_dummy <- rblimp(
     m ~ intercept group | intercept;
     { t in 1:19 } : m ~ (time == [t]);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -279,7 +276,6 @@ model2 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -311,7 +307,6 @@ model3 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -344,7 +339,6 @@ model4 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -376,7 +370,6 @@ model5 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -412,7 +405,6 @@ model6 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 25000,
   iter = 25000)
 
@@ -444,7 +436,6 @@ model7 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 50000,
   iter = 50000)
 
@@ -476,7 +467,6 @@ model8 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 75000,
   iter = 75000)
 
@@ -509,7 +499,6 @@ model9 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 50000,
   iter = 50000)
 
@@ -545,7 +534,6 @@ model10 <- rblimp(
     diff = g1a; 
     d_diff = diff / sqrt(alpha.totalvar);',
   seed = 90291,
-  chains = 4,
   burn = 75000,
   iter = 75000)
 
